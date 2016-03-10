@@ -1,33 +1,18 @@
 namespace org.apache.arrow.metadata;
 
-table PrimitiveVariableWidth {
-}
-
-table PrimitiveFixedWidth {
-  bit_width: int;
-}
-
 table Struct {
-  children: [Field];
 }
 
 table List {
-  values:Field;
 }
 
-table DenseUnion {
-  children: [Field];
+enum UnionMode:int { Sparse, Dense }
+
+table Union {
+  mode: UnionMode;
 }
 
-table SparseUnion {
-  children: [Field];
-}
-
-union PhysicalType {
-  PrimitiveFixedWidth, PrimitiveVariableWidth, Struct
-}
-
-union LogicalType {
+union Type {
   Int, 
   Bit, 
   FloatingPoint,
@@ -38,26 +23,22 @@ union LogicalType {
   Timestamp,
   List,
   Struct,
-  DenseUnion,
-  SparseUnion
-}
-
-table Type {
+  Union
 }
 
 table Field {
   // Name is not required, in i.e. a List
   name: string;
   nullable: bool;
-  physicalType: PhysicalType;
-  logicalType: LogicalType;
+  type: Type;
+  children: [Field];
 }
 
 table Bit {
 }
 
 table Int {
-  byteWidth: int; // 1 to 8
+  bitWidth: int; // 1 to 64
   signed: bool;
 }
 
@@ -92,7 +73,7 @@ table JSONScalar {
 table Metadata {
   version: int;
   metadata_key:int;
-  root: Struct;
+  fields: [Field];
 }
 
 root_type Metadata;
