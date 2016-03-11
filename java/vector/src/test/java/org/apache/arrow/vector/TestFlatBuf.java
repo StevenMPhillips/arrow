@@ -17,10 +17,15 @@
  */
 package org.apache.arrow.vector;
 
-import org.apache.arrow.format.dataheaders.BufferList;
+import org.apache.arrow.format.dataheaders.Field;
+import org.apache.arrow.format.dataheaders.FieldNode;
+import org.apache.arrow.format.dataheaders.Message;
+import org.apache.arrow.format.dataheaders.MessageHeader;
+import org.apache.arrow.format.dataheaders.RecordBatch;
+import org.apache.arrow.format.dataheaders.Schema;
+import org.apache.arrow.format.dataheaders.Type;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.metadata.Metadata;
 import org.apache.arrow.vector.types.MaterializedField;
 import org.apache.arrow.vector.types.Types.DataMode;
 import org.apache.arrow.vector.types.Types.MajorType;
@@ -31,6 +36,10 @@ import org.junit.Test;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class TestFlatBuf {
 
@@ -56,13 +65,35 @@ public class TestFlatBuf {
 
   @Test
   public void getMetadata() throws Exception {
-    ByteBuffer buffer = FlatBufUtil.getMetadata(vectors);
-    Metadata metadata = Metadata.getRootAsMetadata(buffer);
+    ByteBuffer buffer = FlatBufUtil.getSchema(vectors);
+    Message message = Message.getRootAsMessage(buffer);
+    assertEquals(MessageHeader.Schema, message.headerType());
+    Schema schema = (Schema) message.header(new Schema());
+    assertEquals(2, schema.fieldsLength());
+    Field field1 = schema.fields(0);
+    assertEquals("v1", field1.name());
+    assertEquals(Type.Int, field1.typeType());
+    assertFalse(field1.nullable());
+    Field field2 = ((Schema) message.header(new Schema())).fields(1);
+    assertEquals("v2", field2.name());
+    assertEquals(Type.Int, field1.typeType());
+    assertFalse(field1.nullable());
   }
 
   @Test
   public void getDataHeader() throws Exception {
-    ByteBuffer buffer = FlatBufUtil.getDataHeader(vectors);
-    BufferList bufferList = BufferList.getRootAsBufferList(buffer);
+    ByteBuffer buffer = FlatBufUtil.getRecordBatch(vectors, 100);
+    Message message = Message.getRootAsMessage(buffer);
+    assertEquals(MessageHeader.RecordBatch, message.headerType());
+    RecordBatch recordBatch = (RecordBatch) message.header(new RecordBatch());
+    assertEquals(100, recordBatch.length());
+    assertEquals(2, recordBatch.buffersLength());
+    assertEquals(2, recordBatch.nodesLength());
+    FieldNode node1 = recordBatch.nodes(0);
+    assertEquals(100, node1.length());
+    assertEquals(0, node1.nullCount());
+    FieldNode node2= recordBatch.nodes(1);
+    assertEquals(100, node2.length());
+    assertEquals(0, node2.nullCount());
   }
 }
