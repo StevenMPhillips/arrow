@@ -75,8 +75,7 @@
             <argument>--java</argument>
             <argument>-o</argument>
             <argument>target/generated-sources/</argument>
-            <argument>src/main/flatbuffer/Types.fbs</argument>
-            <argument>src/main/flatbuffer/DataHeaders.fbs</argument>
+            <argument>../../format/Message.fbs</argument>
           </arguments>
         </configuration>
       </plugin>

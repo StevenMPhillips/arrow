@@ -18,14 +18,13 @@
 package org.apache.arrow.vector.util;
 
 import com.google.flatbuffers.FlatBufferBuilder;
+import com.sun.xml.internal.ws.api.addressing.WSEndpointReference.Metadata;
 import io.netty.buffer.ArrowBuf;
 import org.apache.arrow.format.dataheaders.Buffer;
-import org.apache.arrow.format.dataheaders.BufferList;
-import org.apache.arrow.metadata.Field;
-import org.apache.arrow.metadata.Int;
-import org.apache.arrow.metadata.Metadata;
-import org.apache.arrow.metadata.Struct;
-import org.apache.arrow.metadata.Type;
+import org.apache.arrow.format.dataheaders.Field;
+import org.apache.arrow.format.dataheaders.Int;
+import org.apache.arrow.format.dataheaders.Schema;
+import org.apache.arrow.format.dataheaders.Type;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.types.Types.DataMode;
@@ -40,14 +39,12 @@ public class FlatBufUtil {
 
   public static ByteBuffer getMetadata(List<ValueVector> vectors) {
     FlatBufferBuilder builder = new FlatBufferBuilder();
-    int version = 1;
-    int metadata_key = 1;
     int[] fieldOffsets = new int[vectors.size()];
     for (int i = 0; i < fieldOffsets.length; i++) {
       fieldOffsets[0] = getField(builder, vectors.get(i));
     }
-    int fieldsOffset = Metadata.createFieldsVector(builder, fieldOffsets);
-    int metadataOffset = Metadata.createMetadata(builder, version, metadata_key, fieldsOffset);
+    int fieldsOffset = Schema.createFieldsVector(builder, fieldOffsets);
+    int metadataOffset = Schema.createSchema(builder, fieldsOffset);
     builder.finish(metadataOffset);
     return copyBuffer(builder.dataBuffer());
   }
@@ -69,7 +66,7 @@ public class FlatBufUtil {
   public static int getField(FlatBufferBuilder builder, IntVector intVector) {
     int nameOffset = builder.createString(intVector.getField().getName());
     int typeOffset = Int.createInt(builder, 16, true);
-    int childrenOffset = Field.createChildrenVector(builder, new int[] {});
+    int childrenOffset = Field.createChildrenVector(builder, new int[]{});
     return Field.createField(builder, nameOffset, false, Type.Int, typeOffset, childrenOffset);
   }
 
