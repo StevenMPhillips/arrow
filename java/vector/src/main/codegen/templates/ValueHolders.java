@@ -31,10 +31,6 @@ package org.apache.arrow.vector.holders;
 
 public final class ${className} implements ValueHolder{
   
-  public static final MajorType TYPE = new MajorType(MinorType.${minor.class?upper_case}, DataMode.${mode.name?upper_case});
-
-  public MajorType getType() {return TYPE;}
-  
     <#if mode.name == "Repeated">
     
     /** The first index (inclusive) into the Vector. **/

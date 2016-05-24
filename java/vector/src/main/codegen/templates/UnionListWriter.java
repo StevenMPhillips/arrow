@@ -43,7 +43,6 @@ public class UnionListWriter extends AbstractFieldWriter {
   private int lastIndex = 0;
 
   public UnionListWriter(ListVector vector) {
-    super(null);
     this.vector = vector;
     this.writer = new PromotableWriter(vector.getDataVector(), vector);
     this.offsets = vector.getOffsetVector();
@@ -64,8 +63,12 @@ public class UnionListWriter extends AbstractFieldWriter {
   }
 
   @Override
-  public MaterializedField getField() {
+  public Field getField() {
     return null;
+  }
+
+  public void setValueCount(int count) {
+    vector.getMutator().setValueCount(count);
   }
 
   @Override

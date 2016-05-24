@@ -19,12 +19,14 @@ package org.apache.arrow.vector;
 
 import java.io.Closeable;
 
+import com.google.flatbuffers.FlatBufferBuilder;
 import io.netty.buffer.ArrowBuf;
 
+import org.apache.arrow.flatbuf.Field;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.complex.reader.FieldReader;
-import org.apache.arrow.vector.types.MaterializedField;
+import org.apache.arrow.vector.types.Types.MinorType;
 import org.apache.arrow.vector.util.TransferPair;
 
 /**
@@ -33,8 +35,7 @@ import org.apache.arrow.vector.util.TransferPair;
  * A {@link ValueVector value vector} stores underlying data in-memory in a columnar fashion that is compact and
  * efficient. The column whose data is stored, is referred by {@link #getField()}.
  *
- * A vector when instantiated, relies on a {@link org.apache.drill.exec.record.DeadBuf dead buffer}. It is important
- * that vector is allocated before attempting to read or write.
+ * It is important that vector is allocated before attempting to read or write.
  *
  * There are a few "rules" around vectors:
  *
@@ -94,7 +95,14 @@ public interface ValueVector extends Closeable, Iterable<ValueVector> {
   /**
    * Get information about how this field is materialized.
    */
-  MaterializedField getField();
+  Field getField();
+
+  /**
+   * Get information about how this field is materialized.
+   */
+  int getField(FlatBufferBuilder builder);
+
+  MinorType getMinorType();
 
   /**
    * Returns a {@link org.apache.arrow.vector.util.TransferPair transfer pair}, creating a new target vector of

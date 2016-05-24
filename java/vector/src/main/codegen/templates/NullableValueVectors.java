@@ -42,10 +42,10 @@ package org.apache.arrow.vector;
 public final class ${className} extends BaseDataValueVector implements <#if type.major == "VarLen">VariableWidth<#else>FixedWidth</#if>Vector, NullableVector{
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(${className}.class);
 
-  private final FieldReader reader = new Nullable${minor.class}ReaderImpl(Nullable${minor.class}Vector.this);
+  private final FieldReader reader = new ${minor.class}ReaderImpl(Nullable${minor.class}Vector.this);
 
-  private final MaterializedField bitsField = MaterializedField.create("$bits$", new MajorType(MinorType.UINT1, DataMode.REQUIRED));
-  private final MaterializedField valuesField = MaterializedField.create("$values$", new MajorType(field.getType().getMinorType(), DataMode.REQUIRED, field.getPrecision(), field.getScale()));
+  private final String bitsField = "$bits$";
+  private final String valuesField = "$values$";
 
   final UInt1Vector bits = new UInt1Vector(bitsField, allocator);
   final ${valuesName} values = new ${minor.class}Vector(valuesField, allocator);
@@ -53,8 +53,63 @@ public final class ${className} extends BaseDataValueVector implements <#if type
   private final Mutator mutator = new Mutator();
   private final Accessor accessor = new Accessor();
 
-  public ${className}(MaterializedField field, BufferAllocator allocator) {
-    super(field, allocator);
+  public ${className}(String name, BufferAllocator allocator) {
+    super(name, allocator);
+  }
+
+  @Override
+  public int getField(FlatBufferBuilder builder) {
+    int nameOffset = builder.createString(name);
+<#if minor.class == "TinyInt" ||
+    minor.class == "SmallInt" ||
+    minor.class == "Int" ||
+    minor.class == "BigInt">
+    int typeOffset = Int.createInt(builder, ${type.width} * 8, true);
+    byte type = Type.Int;
+<#elseif minor.class == "UInt1" ||
+    minor.class == "UInt2" ||
+    minor.class == "UInt4" ||
+    minor.class == "UInt8">
+    int typeOffset = Int.createInt(builder, ${type.width} * 8, false);
+    byte type = Type.Int;
+<#elseif minor.class == "Date">
+    org.apache.arrow.flatbuf.Date.startDate(builder);
+    int typeOffset = org.apache.arrow.flatbuf.Date.endDate(builder);
+    byte type = Type.Date;
+<#elseif minor.class == "Time">
+    org.apache.arrow.flatbuf.Time.startTime(builder);
+    int typeOffset = org.apache.arrow.flatbuf.Time.endTime(builder);
+    byte type = Type.Time;
+<#elseif minor.class == "Float4">
+    int typeOffset = org.apache.arrow.flatbuf.FloatingPoint.createFloatingPoint(builder, Precision.SINGLE);
+    byte type = Type.FloatingPoint;
+<#elseif minor.class == "Float8">
+    int typeOffset = org.apache.arrow.flatbuf.FloatingPoint.createFloatingPoint(builder, Precision.DOUBLE);
+    byte type = Type.FloatingPoint;
+<#elseif minor.class == "TimeStamp">
+    int typeOffset = org.apache.arrow.flatbuf.Timestamp.createTimestamp(builder, 0);
+    byte type = Type.Timestamp;
+<#elseif minor.class == "VarChar">
+    Utf8.startUtf8(builder);
+    int typeOffset = Utf8.endUtf8(builder);
+    byte type = Type.Utf8;
+<#elseif minor.class == "VarBinary">
+    Binary.startBinary(builder);
+    int typeOffset = Binary.endBinary(builder);
+    byte type = Type.Binary;
+<#elseif minor.class == "Bit">
+    Bit.startBit(builder);
+    int typeOffset = Bit.endBit(builder);
+    byte type = Type.Bit;
+</#if>
+    int[] data = new int[] {};
+    int childrenOffset = Field.createChildrenVector(builder, data);
+    return Field.createField(builder, nameOffset, true, type, typeOffset, childrenOffset);
+  }
+
+  @Override
+  public MinorType getMinorType() {
+    return MinorType.${minor.class?upper_case};
   }
 
   @Override
@@ -240,12 +295,12 @@ public final class ${className} extends BaseDataValueVector implements <#if type
 
   @Override
   public TransferPair getTransferPair(BufferAllocator allocator){
-    return new TransferImpl(getField(), allocator);
+    return new TransferImpl(name, allocator);
   }
 
   @Override
   public TransferPair getTransferPair(String ref, BufferAllocator allocator){
-    return new TransferImpl(getField().withPath(ref), allocator);
+    return new TransferImpl(ref, allocator);
   }
 
   @Override
@@ -273,8 +328,8 @@ public final class ${className} extends BaseDataValueVector implements <#if type
   private class TransferImpl implements TransferPair {
     Nullable${minor.class}Vector to;
 
-    public TransferImpl(MaterializedField field, BufferAllocator allocator){
-      to = new Nullable${minor.class}Vector(field, allocator);
+    public TransferImpl(String name, BufferAllocator allocator){
+      to = new Nullable${minor.class}Vector(name, allocator);
     }
 
     public TransferImpl(Nullable${minor.class}Vector to){
@@ -310,17 +365,6 @@ public final class ${className} extends BaseDataValueVector implements <#if type
   @Override
   public Mutator getMutator(){
     return mutator;
-  }
-
-  public ${minor.class}Vector convertToRequiredVector(){
-    ${minor.class}Vector v = new ${minor.class}Vector(getField().getOtherNullableVersion(), allocator);
-    if (v.data != null) {
-      v.data.release(1);
-    }
-    v.data = values.data;
-    v.data.retain(1);
-    clear();
-    return v;
   }
 
   public void copyFrom(int fromIndex, int thisIndex, Nullable${minor.class}Vector from){

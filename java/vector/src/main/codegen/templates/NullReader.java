@@ -31,22 +31,22 @@ package org.apache.arrow.vector.complex.impl;
 public class NullReader extends AbstractBaseReader implements FieldReader{
   
   public static final NullReader INSTANCE = new NullReader();
-  public static final NullReader EMPTY_LIST_INSTANCE = new NullReader(Types.repeated(MinorType.NULL));
-  public static final NullReader EMPTY_MAP_INSTANCE = new NullReader(Types.required(MinorType.MAP));
-  private MajorType type;
+  public static final NullReader EMPTY_LIST_INSTANCE = new NullReader(MinorType.NULL);
+  public static final NullReader EMPTY_MAP_INSTANCE = new NullReader(MinorType.MAP);
+  private MinorType type;
   
   private NullReader(){
     super();
-    type = Types.required(MinorType.NULL);
+    type = MinorType.NULL;
   }
 
-  private NullReader(MajorType type){
+  private NullReader(MinorType type){
     super();
     this.type = type;
   }
 
   @Override
-  public MajorType getType() {
+  public MinorType getMinorType() {
     return type;
   }
   

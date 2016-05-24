@@ -17,11 +17,14 @@ import com.google.common.collect.ObjectArrays;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ObjectArrays;
 
+import com.google.flatbuffers.FlatBufferBuilder;
+
 import com.google.common.base.Preconditions;
 import io.netty.buffer.*;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import org.apache.arrow.flatbuf.*;
 import org.apache.arrow.memory.*;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.Types.*;
