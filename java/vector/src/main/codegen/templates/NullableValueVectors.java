@@ -48,14 +48,31 @@ public final class ${className} extends BaseDataValueVector implements <#if type
   private final String valuesField = "$values$";
 
   final UInt1Vector bits = new UInt1Vector(bitsField, allocator);
-  final ${valuesName} values = new ${minor.class}Vector(valuesField, allocator);
+  final ${valuesName} values;
 
-  private final Mutator mutator = new Mutator();
-  private final Accessor accessor = new Accessor();
+  private final Mutator mutator;
+  private final Accessor accessor;
 
+  <#if minor.class == "Decimal">
+  private final int precision;
+  private final int scale;
+
+  public ${className}(String name, BufferAllocator allocator, int precision, int scale) {
+    super(name, allocator);
+    values = new ${minor.class}Vector(valuesField, allocator, precision, scale);
+    this.precision = precision;
+    this.scale = scale;
+    mutator = new Mutator();
+    accessor = new Accessor();
+  }
+  <#else>
   public ${className}(String name, BufferAllocator allocator) {
     super(name, allocator);
+    values = new ${minor.class}Vector(valuesField, allocator);
+    mutator = new Mutator();
+    accessor = new Accessor();
   }
+  </#if>
 
   @Override
   public int getField(FlatBufferBuilder builder) {
@@ -89,6 +106,14 @@ public final class ${className} extends BaseDataValueVector implements <#if type
 <#elseif minor.class == "TimeStamp">
     int typeOffset = org.apache.arrow.flatbuf.Timestamp.createTimestamp(builder, 0);
     byte type = Type.Timestamp;
+<#elseif minor.class == "IntervalDay">
+        IntervalDay.startIntervalDay(builder);
+        int typeOffset = IntervalDay.endIntervalDay(builder);
+        byte type = Type.IntervalDay;
+<#elseif minor.class == "IntervalYear">
+        IntervalYear.startIntervalYear(builder);
+        int typeOffset = IntervalYear.endIntervalYear(builder);
+        byte type = Type.IntervalYear;
 <#elseif minor.class == "VarChar">
     Utf8.startUtf8(builder);
     int typeOffset = Utf8.endUtf8(builder);
@@ -97,6 +122,9 @@ public final class ${className} extends BaseDataValueVector implements <#if type
     Binary.startBinary(builder);
     int typeOffset = Binary.endBinary(builder);
     byte type = Type.Binary;
+<#elseif minor.class == "Decimal">
+    int typeOffset = Decimal.createDecimal(builder, precision, scale);
+    byte type = Type.Decimal;
 <#elseif minor.class == "Bit">
     Bit.startBit(builder);
     int typeOffset = Bit.endBit(builder);
@@ -296,6 +324,7 @@ public final class ${className} extends BaseDataValueVector implements <#if type
   @Override
   public TransferPair getTransferPair(BufferAllocator allocator){
     return new TransferImpl(name, allocator);
+
   }
 
   @Override
@@ -329,7 +358,11 @@ public final class ${className} extends BaseDataValueVector implements <#if type
     Nullable${minor.class}Vector to;
 
     public TransferImpl(String name, BufferAllocator allocator){
+      <#if minor.class == "Decimal">
+      to = new Nullable${minor.class}Vector(name, allocator, precision, scale);
+      <#else>
       to = new Nullable${minor.class}Vector(name, allocator);
+      </#if>
     }
 
     public TransferImpl(Nullable${minor.class}Vector to){
@@ -433,8 +466,8 @@ public final class ${className} extends BaseDataValueVector implements <#if type
       holder.isSet = bAccessor.get(index);
 
       <#if minor.class.startsWith("Decimal")>
-      holder.scale = getField().getScale();
-      holder.precision = getField().getPrecision();
+      holder.scale = scale;
+      holder.precision = precision;
       </#if>
     }
 

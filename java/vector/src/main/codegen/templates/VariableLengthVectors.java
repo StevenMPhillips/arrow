@@ -66,29 +66,48 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements V
   private int allocationSizeInBytes = INITIAL_BYTE_COUNT;
   private int allocationMonitor = 0;
 
+  <#if minor.class == "Decimal">
+
+  private final int precision;
+  private final int scale;
+
+  public ${minor.class}Vector(String name, BufferAllocator allocator, int precision, int scale) {
+    super(name, allocator);
+    this.oAccessor = offsetVector.getAccessor();
+    this.accessor = new Accessor();
+    this.mutator = new Mutator();
+    this.precision = precision;
+    this.scale = scale;
+  }
+  <#else>
+
   public ${minor.class}Vector(String name, BufferAllocator allocator) {
     super(name, allocator);
     this.oAccessor = offsetVector.getAccessor();
     this.accessor = new Accessor();
     this.mutator = new Mutator();
   }
+  </#if>
 
-@Override
-public int getField(FlatBufferBuilder builder) {
-        int nameOffset = builder.createString(name);
-        <#if minor.class == "VarChar">
-        Utf8.startUtf8(builder);
-        int typeOffset = Utf8.endUtf8(builder);
-        byte type = Type.Utf8;
-        <#elseif minor.class == "VarBinary">
-        Binary.startBinary(builder);
-        int typeOffset = Binary.endBinary(builder);
-        byte type = Type.Binary;
-        </#if>
-        int[] data = new int[] {};
-        int childrenOffset = Field.createChildrenVector(builder, data);
-        return Field.createField(builder, nameOffset, false, type, typeOffset, childrenOffset);
-        }
+  @Override
+  public int getField(FlatBufferBuilder builder) {
+    int nameOffset = builder.createString(name);
+    <#if minor.class == "VarChar">
+    Utf8.startUtf8(builder);
+    int typeOffset = Utf8.endUtf8(builder);
+    byte type = Type.Utf8;
+    <#elseif minor.class == "VarBinary">
+    Binary.startBinary(builder);
+    int typeOffset = Binary.endBinary(builder);
+    byte type = Type.Binary;
+    <#elseif minor.class == "Decimal">
+    int typeOffset = Decimal.createDecimal(builder, precision, scale);
+    byte type = Type.Decimal;
+    </#if>
+    int[] data = new int[] {};
+    int childrenOffset = Field.createChildrenVector(builder, data);
+    return Field.createField(builder, nameOffset, false, type, typeOffset, childrenOffset);
+  }
 
   @Override
   public MinorType getMinorType() {
@@ -145,27 +164,6 @@ public int getField(FlatBufferBuilder builder) {
     return offsetVector.getAccessor().get(valueCount);
   }
 
-//  @Override
-//  public SerializedField getMetadata() {
-//    return getMetadataBuilder() //
-//             .addChild(offsetVector.getMetadata())
-//             .setValueCount(getAccessor().getValueCount()) //
-//             .setBufferLength(getBufferSize()) //
-//             .build();
-//  }
-//
-//  @Override
-//  public void load(SerializedField metadata, ArrowBuf buffer) {
-//     the bits vector is the first child (the order in which the children are added in getMetadataBuilder is significant)
-//    final SerializedField offsetField = metadata.getChild(0);
-//    offsetVector.load(offsetField, buffer);
-//
-//    final int capacity = buffer.capacity();
-//    final int offsetsLength = offsetField.getBufferLength();
-//    data = buffer.slice(offsetsLength, capacity - offsetsLength);
-//    data.retain();
-//  }
-
   @Override
   public void clear() {
     super.clear();
@@ -195,7 +193,7 @@ public int getField(FlatBufferBuilder builder) {
 
   @Override
   public TransferPair getTransferPair(BufferAllocator allocator){
-    return new TransferImpl(name, allocator);
+        return new TransferImpl(name, allocator);
   }
 
   @Override
@@ -262,7 +260,11 @@ public int getField(FlatBufferBuilder builder) {
     ${minor.class}Vector to;
 
     public TransferImpl(String name, BufferAllocator allocator){
+      <#if minor.class == "Decimal">
+      to = new ${minor.class}Vector(name, allocator, precision, scale);
+      <#else>
       to = new ${minor.class}Vector(name, allocator);
+      </#if>
     }
 
     public TransferImpl(${minor.class}Vector to){
@@ -446,10 +448,10 @@ public int getField(FlatBufferBuilder builder) {
       return text;
     }
     <#break>
-    <#case "Var16Char">
+    <#case "Decimal">
     @Override
     public ${friendlyType} getObject(int index) {
-      return new String(get(index), Charsets.UTF_16);
+      return new BigDecimal(new BigInteger(get(index)), scale);
     }
     <#break>
     <#default>

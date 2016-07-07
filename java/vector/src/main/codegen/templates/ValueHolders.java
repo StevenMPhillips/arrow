@@ -52,40 +52,9 @@ public final class ${className} implements ValueHolder{
     </#list>
     
     <#if minor.class.startsWith("Decimal")>
-    public static final int maxPrecision = ${minor.maxPrecisionDigits};
-    <#if minor.class.startsWith("Decimal28") || minor.class.startsWith("Decimal38")>
-    public static final int nDecimalDigits = ${minor.nDecimalDigits};
-    
-    public static int getInteger(int index, int start, ArrowBuf buffer) {
-      int value = buffer.getInt(start + (index * 4));
-
-      if (index == 0) {
-          /* the first byte contains sign bit, return value without it */
-          <#if minor.class.endsWith("Sparse")>
-          value = (value & 0x7FFFFFFF);
-          <#elseif minor.class.endsWith("Dense")>
-          value = (value & 0x0000007F);
-          </#if>
-      }
-      return value;
-    }
-
-    public static void setInteger(int index, int value, int start, ArrowBuf buffer) {
-        buffer.setInt(start + (index * 4), value);
-    }
-  
-    public static void setSign(boolean sign, int start, ArrowBuf buffer) {
-      // Set MSB to 1 if sign is negative
-      if (sign == true) {
-        int value = getInteger(0, start, buffer);
-        setInteger(0, (value | 0x80000000), start, buffer);
-      }
-    }
-  
-    public static boolean getSign(int start, ArrowBuf buffer) {
-      return ((buffer.getInt(start) & 0x80000000) != 0);
-    }
-    </#if></#if>
+    public int precision;
+    public int scale;
+    </#if>
     
     @Deprecated
     public int hashCode(){

@@ -269,7 +269,7 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements F
   }
 
   public void copyFrom(int fromIndex, int thisIndex, ${minor.class}Vector from){
-    <#if (type.width > 8)>
+    <#if (type.width > 8 || minor.class == "IntervalDay")>
     from.data.getBytes(fromIndex * ${type.width}, data, thisIndex * ${type.width}, ${type.width});
     <#else> <#-- type.width <= 8 -->
     data.set${(minor.javaType!type.javaType)?cap_first}(thisIndex * ${type.width},
@@ -307,7 +307,7 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements F
       return false;
     }
 
-    <#if (type.width > 8)>
+    <#if (type.width > 8 || minor.class == "IntervalDay")>
 
     public ${minor.javaType!type.javaType} get(int index) {
       return data.slice(index * ${type.width}, ${type.width});
@@ -590,7 +590,7 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements F
     * @param index   position of the bit to set
     * @param value   value to set
     */
-  <#if (type.width > 8)>
+  <#if (type.width > 8) || minor.class == "IntervalDay">
    public void set(int index, <#if (type.width > 4)>${minor.javaType!type.javaType}<#else>int</#if> value) {
      data.setBytes(index * ${type.width}, value, 0, ${type.width});
    }

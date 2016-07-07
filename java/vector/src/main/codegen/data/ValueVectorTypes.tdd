@@ -60,6 +60,7 @@
         { class: "Int", valueHolder: "IntHolder"},
         { class: "UInt4", valueHolder: "UInt4Holder" },
         { class: "Float4", javaType: "float" , boxedType: "Float", fields: [{name: "value", type: "float"}]},
+        { class: "IntervalYear", javaType: "int", friendlyType: "Period" }
         { class: "Time", javaType: "int", friendlyType: "DateTime" }
       ]
     },
@@ -78,6 +79,15 @@
       ]
     },
     {
+      major: "Fixed",
+      width: 8,
+      javaType: "ArrowBuf",
+      boxedType: "ArrowBuf",
+      minor: [
+        { class: "IntervalDay", millisecondsOffset: 4, friendlyType: "Period", fields: [ {name: "days", type:"int"}, {name: "milliseconds", type:"int"}] }
+      ]
+    },
+    {
       major: "VarLen",
       width: 4,
       javaType: "int",
@@ -85,6 +95,7 @@
       fields: [{name: "start", type: "int"}, {name: "end", type: "int"}, {name: "buffer", type: "ArrowBuf"}],
       minor: [
         { class: "VarBinary" , friendlyType: "byte[]" },
+        { class: "Decimal" , friendlyType: "BigDecimal" },
         { class: "VarChar" , friendlyType: "Text" }
       ]
     },

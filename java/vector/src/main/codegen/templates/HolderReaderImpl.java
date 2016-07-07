@@ -122,6 +122,8 @@ public class ${holderMode}${name}HolderReaderImpl extends AbstractFieldReader {
       Text text = new Text();
       text.set(value);
       return text;
+<#elseif minor.class == "Decimal" >
+        return new BigDecimal(new BigInteger(value), holder.scale);
 </#if>
 
 <#elseif minor.class == "Interval">
@@ -132,10 +134,6 @@ public class ${holderMode}${name}HolderReaderImpl extends AbstractFieldReader {
       Period p = new Period();
       return p.plusDays(holder.days).plusMillis(holder.milliseconds);
 
-<#elseif minor.class == "Decimal9" ||
-         minor.class == "Decimal18" >
-      BigInteger value = BigInteger.valueOf(holder.value);
-      return new BigDecimal(value, holder.scale);
 
 <#elseif minor.class == "Decimal28Dense" ||
          minor.class == "Decimal38Dense">
@@ -187,6 +185,9 @@ public class ${holderMode}${name}HolderReaderImpl extends AbstractFieldReader {
       Text text = new Text();
       text.set(value);
       return text;
+<#elseif minor.class == "Decimal" >
+        return new BigDecimal(new BigInteger(value), holder.scale);
+
 </#if>
 
 <#elseif minor.class == "Interval">
@@ -196,11 +197,6 @@ public class ${holderMode}${name}HolderReaderImpl extends AbstractFieldReader {
 <#elseif minor.class == "IntervalDay">
       Period p = new Period();
       return p.plusDays(holder.days).plusMillis(holder.milliseconds);
-
-<#elseif minor.class == "Decimal9" ||
-         minor.class == "Decimal18" >
-      BigInteger value = BigInteger.valueOf(holder.value);
-      return new BigDecimal(value, holder.scale);
 
 <#elseif minor.class == "Decimal28Dense" ||
          minor.class == "Decimal38Dense">

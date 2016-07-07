@@ -58,6 +58,12 @@ table Timestamp {
   timezone: string;
 }
 
+table IntervalDay {
+}
+
+table IntervalYear {
+}
+
 table JSONScalar {
   dense:bool=true;
 }
@@ -77,6 +83,8 @@ union Type {
   Date,
   Time,
   Timestamp,
+  IntervalDay,
+  IntervalYear,
   List,
   Tuple,
   Union,
