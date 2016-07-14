@@ -5,6 +5,9 @@ namespace org.apache.arrow.flatbuf;
 ///
 /// These are stored in the flatbuffer in the Type union below
 
+table Null {
+}
+
 /// A Tuple in the flatbuffer metadata is the same as an Arrow Struct
 /// (according to the physical memory layout). We used Tuple here as Struct is
 /// a reserved word in Flatbuffers
@@ -73,6 +76,7 @@ table JSONScalar {
 /// add new logical types to Type without breaking backwards compatibility
 
 union Type {
+  Null,
   Int,
   Bit,
   FloatingPoint,
