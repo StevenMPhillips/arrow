@@ -19,15 +19,14 @@ package org.apache.arrow.vector;
 
 import java.io.Closeable;
 
-import com.google.flatbuffers.FlatBufferBuilder;
 import io.netty.buffer.ArrowBuf;
 
-import org.apache.arrow.flatbuf.Field;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types.MinorType;
 import org.apache.arrow.vector.util.TransferPair;
+import org.apache.arrow.vector.types.pojo.Field;
 
 /**
  * An abstraction that is used to store a sequence of values in an individual column.
@@ -96,11 +95,6 @@ public interface ValueVector extends Closeable, Iterable<ValueVector> {
    * Get information about how this field is materialized.
    */
   Field getField();
-
-  /**
-   * Get information about how this field is materialized.
-   */
-  int getField(FlatBufferBuilder builder);
 
   MinorType getMinorType();
 

@@ -17,9 +17,9 @@
  */
 package org.apache.arrow.vector.complex;
 
-import com.google.flatbuffers.FlatBufferBuilder;
 import io.netty.buffer.ArrowBuf;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -27,9 +27,6 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import org.apache.arrow.flatbuf.Field;
-import org.apache.arrow.flatbuf.Tuple;
-import org.apache.arrow.flatbuf.Type;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.BaseValueVector;
 import org.apache.arrow.vector.ValueVector;
@@ -37,6 +34,9 @@ import org.apache.arrow.vector.complex.impl.SingleMapReaderImpl;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.holders.ComplexHolder;
 import org.apache.arrow.vector.types.Types.MinorType;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.ArrowType.Tuple;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.CallBack;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 import org.apache.arrow.vector.util.TransferPair;
@@ -301,25 +301,11 @@ public class MapVector extends AbstractMapVector {
 
   @Override
   public Field getField() {
-    FlatBufferBuilder builder = new FlatBufferBuilder();
-    int offset = getField(builder);
-    builder.finish(offset);
-    return Field.getRootAsField(builder.dataBuffer());
-  }
-
-  @Override
-  public int getField(FlatBufferBuilder builder) {
-    int nameOffset = builder.createString(name);
-    Tuple.startTuple(builder);
-    int typeOffset = Tuple.endTuple(builder);
-    byte type = Type.Tuple;
-    List<ValueVector> children = getChildren();
-    int[] data = new int[children.size()];
-    for (int i = 0; i < children.size(); i++) {
-      data[i] = children.get(i).getField(builder);
+    List<Field> children = new ArrayList<>();
+    for (ValueVector child : getChildren()) {
+      children.add(child.getField());
     }
-    int childrenOffset = Field.createChildrenVector(builder, data);
-    return Field.createField(builder, nameOffset, false, type, typeOffset, childrenOffset);
+    return new Field(name, false, Tuple.INSTANCE, children);
   }
 
   @Override

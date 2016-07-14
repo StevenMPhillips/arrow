@@ -90,23 +90,8 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements V
   </#if>
 
   @Override
-  public int getField(FlatBufferBuilder builder) {
-    int nameOffset = builder.createString(name);
-    <#if minor.class == "VarChar">
-    Utf8.startUtf8(builder);
-    int typeOffset = Utf8.endUtf8(builder);
-    byte type = Type.Utf8;
-    <#elseif minor.class == "VarBinary">
-    Binary.startBinary(builder);
-    int typeOffset = Binary.endBinary(builder);
-    byte type = Type.Binary;
-    <#elseif minor.class == "Decimal">
-    int typeOffset = Decimal.createDecimal(builder, precision, scale);
-    byte type = Type.Decimal;
-    </#if>
-    int[] data = new int[] {};
-    int childrenOffset = Field.createChildrenVector(builder, data);
-    return Field.createField(builder, nameOffset, false, type, typeOffset, childrenOffset);
+  public Field getField() {
+        throw new UnsupportedOperationException("internal vector");
   }
 
   @Override

@@ -22,13 +22,14 @@ import io.netty.buffer.ArrowBuf;
 
 import java.util.Iterator;
 
-import org.apache.arrow.flatbuf.Field;
 import org.apache.arrow.flatbuf.Type;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.complex.impl.NullReader;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types.MinorType;
+import org.apache.arrow.vector.types.pojo.ArrowType.Null;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.TransferPair;
 
 import com.google.common.collect.Iterators;
@@ -92,23 +93,7 @@ public class ZeroVector implements ValueVector {
 
   @Override
   public Field getField() {
-    FlatBufferBuilder builder = new FlatBufferBuilder();
-    int field = getField(builder);
-    builder.finish(field);
-    return Field.getRootAsField(builder.dataBuffer());
-  }
-
-  @Override
-  public int getField(FlatBufferBuilder builder) {
-    int nameOffset = builder.createString(name);
-    byte type = Type.NONE;
-    int[] data = new int[] {};
-    int childrenOffset = Field.createChildrenVector(builder, data);
-    Field.startField(builder);
-    Field.addName(builder, nameOffset);
-    Field.addTypeType(builder, type);
-    Field.addChildren(builder, childrenOffset);
-    return Field.endField(builder);
+    return new Field(name, true, new Null(), null);
   }
 
   @Override

@@ -18,14 +18,12 @@
  ******************************************************************************/
 package org.apache.arrow.vector.complex;
 
+import com.google.common.collect.ImmutableList;
 import com.google.flatbuffers.FlatBufferBuilder;
 import io.netty.buffer.ArrowBuf;
 
 import java.util.List;
 
-import org.apache.arrow.flatbuf.Field;
-import org.apache.arrow.flatbuf.Int;
-import org.apache.arrow.flatbuf.Type;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.AddOrGetResult;
@@ -39,6 +37,7 @@ import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.complex.writer.FieldWriter;
 import org.apache.arrow.vector.types.Types.MinorType;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.CallBack;
 import org.apache.arrow.vector.util.JsonStringArrayList;
 import org.apache.arrow.vector.util.TransferPair;
@@ -204,15 +203,9 @@ public class ListVector extends BaseRepeatedValueVector {
   }
 
   @Override
-  public int getField(FlatBufferBuilder builder) {
-    int nameOffset = builder.createString(name);
-    org.apache.arrow.flatbuf.List.startList(builder);
-    int typeOffset = org.apache.arrow.flatbuf.List.endList(builder);
-    byte type = Type.List;
-    int childOffset = getDataVector().getField(builder);
-    int[] data = new int[] { childOffset };
-    int childrenOffset = Field.createChildrenVector(builder, data);
-    return Field.createField(builder, nameOffset, true, type, typeOffset, childrenOffset);
+  public Field getField() {
+    return new Field(name, true, new org.apache.arrow.vector.types.pojo.ArrowType.List(),
+            ImmutableList.of(getDataVector().getField()));
   }
 
   @Override

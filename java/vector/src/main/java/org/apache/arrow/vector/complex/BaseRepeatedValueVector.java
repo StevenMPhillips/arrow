@@ -158,9 +158,9 @@ public abstract class BaseRepeatedValueVector extends BaseValueVector implements
       created = true;
     }
 
-    if (vector.getField().typeType() != minorType.getTypeType()) {
+    if (vector.getField().getType().getTypeType() != minorType.getType().getTypeType()) {
       final String msg = String.format("Inner vector type mismatch. Requested type: [%s], actual type: [%s]",
-          Type.name(minorType.getTypeType()), Type.name(vector.getField().typeType()));
+          Type.name(minorType.getType().getTypeType()), Type.name(vector.getField().getType().getTypeType()));
       throw new SchemaChangeRuntimeException(msg);
     }
 

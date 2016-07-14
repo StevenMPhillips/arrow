@@ -21,7 +21,9 @@ import org.apache.arrow.flatbuf.Field;
 import org.apache.arrow.flatbuf.Type;
 import org.apache.arrow.flatbuf.Union;
 import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 <@pp.dropOutputFile />
@@ -191,24 +193,14 @@ public class UnionVector implements ValueVector {
 
   @Override
   public Field getField() {
-    FlatBufferBuilder builder = new FlatBufferBuilder();
-    int field = getField(builder);
-    builder.finish(field);
-    return Field.getRootAsField(builder.dataBuffer());
-  }
-
-  @Override
-  public int getField(FlatBufferBuilder builder) {
-    int nameOffset = builder.createString(name);
-    Union.startUnion(builder);
-    int typeOffset = Union.endUnion(builder);
-    List<ValueVector> children = internalMap.getChildren();
-    int[] data = new int[children.size() - 1];
-    for (int i = 0; i < data.length; i++) {
-      data[i] = children.get(i + 1).getField(builder);
+    List<org.apache.arrow.vector.types.pojo.Field> childFields = new ArrayList<>();
+    for (ValueVector v : internalMap.getChildren()) {
+      if (v.getField().getName().equals("types")) {
+        continue;
+      }
+      childFields.add(v.getField());
     }
-    int childrenOffset = Field.createChildrenVector(builder, data);
-    return Field.createField(builder, nameOffset, true, Type.Union, typeOffset, childrenOffset);
+    return new Field(name, true, new ArrowType.Union(), childFields);
   }
 
   @Override

@@ -17,22 +17,8 @@
  */
 package org.apache.arrow.vector.types;
 
-import com.google.flatbuffers.FlatBufferBuilder;
-import com.google.flatbuffers.Table;
-import org.apache.arrow.flatbuf.Binary;
-import org.apache.arrow.flatbuf.Bit;
-import org.apache.arrow.flatbuf.Date;
-import org.apache.arrow.flatbuf.FloatingPoint;
-import org.apache.arrow.flatbuf.Int;
-import org.apache.arrow.flatbuf.Precision;
-import org.apache.arrow.flatbuf.Time;
-import org.apache.arrow.flatbuf.Timestamp;
-import org.apache.arrow.flatbuf.Tuple;
 import org.apache.arrow.flatbuf.Type;
-import org.apache.arrow.flatbuf.Union;
-import org.apache.arrow.flatbuf.Utf8;
 import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.NullableBigIntVector;
 import org.apache.arrow.vector.NullableBitVector;
 import org.apache.arrow.vector.NullableDateVector;
@@ -80,39 +66,58 @@ import org.apache.arrow.vector.complex.impl.UnionWriter;
 import org.apache.arrow.vector.complex.impl.VarBinaryWriterImpl;
 import org.apache.arrow.vector.complex.impl.VarCharWriterImpl;
 import org.apache.arrow.vector.complex.writer.FieldWriter;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.ArrowType.Binary;
+import org.apache.arrow.vector.types.pojo.ArrowType.Bit;
+import org.apache.arrow.vector.types.pojo.ArrowType.Date;
+import org.apache.arrow.vector.types.pojo.ArrowType.FloatingPoint;
+import org.apache.arrow.vector.types.pojo.ArrowType.Int;
+import org.apache.arrow.vector.types.pojo.ArrowType.IntervalDay;
+import org.apache.arrow.vector.types.pojo.ArrowType.IntervalYear;
+import org.apache.arrow.vector.types.pojo.ArrowType.List;
+import org.apache.arrow.vector.types.pojo.ArrowType.Null;
+import org.apache.arrow.vector.types.pojo.ArrowType.Time;
+import org.apache.arrow.vector.types.pojo.ArrowType.Timestamp;
+import org.apache.arrow.vector.types.pojo.ArrowType.Tuple;
+import org.apache.arrow.vector.types.pojo.ArrowType.Union;
+import org.apache.arrow.vector.types.pojo.ArrowType.Utf8;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.CallBack;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Types {
 
-  public static final byte MAP_TYPE_TYPE = Type.Tuple;
-  public static final byte TINYINT_TYPE_TYPE = Type.Int;
-  public static final byte SMALLINT_TYPE_TYPE = Type.Int;
-  public static final byte INT_TYPE_TYPE = Type.Int;
-  public static final byte BIGINT_TYPE_TYPE = Type.Int;
-  public static final byte UINT1_TYPE_TYPE = Type.Int;
-  public static final byte UINT2_TYPE_TYPE = Type.Int;
-  public static final byte UINT4_TYPE_TYPE = Type.Int;
-  public static final byte UINT8_TYPE_TYPE = Type.Int;
-  public static final byte DATE_TYPE_TYPE = Type.Date;
-  public static final byte TIME_TYPE_TYPE = Type.Time;
-  public static final byte TIMESTAMP_TYPE_TYPE = Type.Timestamp;
-  public static final byte INTERVALDAY_TYPE_TYPE = Type.IntervalDay;
-  public static final byte INTERVALYEAR_TYPE_TYPE = Type.IntervalYear;
-  public static final byte FLOAT4_TYPE_TYPE = Type.FloatingPoint;
-  public static final byte FLOAT8_TYPE_TYPE = Type.FloatingPoint;
-  public static final byte LIST_TYPE_TYPE = Type.List;
-  public static final byte VARCHAR_TYPE_TYPE = Type.Utf8;
-  public static final byte VARBINARY_TYPE_TYPE = Type.Binary;
-  public static final byte DECIMAL_TYPE_TYPE = Type.Decimal;
-  public static final byte UNION_TYPE_TYPE = Type.Union;
-  public static final byte BIT_TYPE_TYPE = Type.Bit;
+  public static final Field NULL_FIELD = new Field("", true, Null.INSTANCE, null);
+  public static final Field TINYINT_FIELD = new Field("", true, new Int(8, true), null);
+  public static final Field SMALLINT_FIELD = new Field("", true, new Int(16, true), null);
+  public static final Field INT_FIELD = new Field("", true, new Int(32, true), null);
+  public static final Field BIGINT_FIELD = new Field("", true, new Int(64, true), null);
+  public static final Field UINT1_FIELD = new Field("", true, new Int(8, false), null);
+  public static final Field UINT2_FIELD = new Field("", true, new Int(16, false), null);
+  public static final Field UINT4_FIELD = new Field("", true, new Int(32, false), null);
+  public static final Field UINT8_FIELD = new Field("", true, new Int(64, false), null);
+  public static final Field DATE_FIELD = new Field("", true, Date.INSTANCE, null);
+  public static final Field TIME_FIELD = new Field("", true, Time.INSTANCE, null);
+  public static final Field TIMESTAMP_FIELD = new Field("", true, new Timestamp(""), null);
+  public static final Field INTERVALDAY_FIELD = new Field("", true, IntervalDay.INSTANCE, null);
+  public static final Field INTERVALYEAR_FIELD = new Field("", true, IntervalYear.INSTANCE, null);
+  public static final Field FLOAT4_FIELD = new Field("", true, new FloatingPoint(0), null);
+  public static final Field FLOAT8_FIELD = new Field("", true, new FloatingPoint(1), null);
+  public static final Field LIST_FIELD = new Field("", true, List.INSTANCE, null);
+  public static final Field VARCHAR_FIELD = new Field("", true, Utf8.INSTANCE, null);
+  public static final Field VARBINARY_FIELD = new Field("", true, Binary.INSTANCE, null);
+  public static final Field BIT_FIELD = new Field("", true, Bit.INSTANCE, null);
+
 
   public enum MinorType {
-    NULL(Type.NONE) {
+    NULL(Null.INSTANCE) {
+      @Override
+      public Field getField() {
+        return NULL_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new ZeroVector();
@@ -123,7 +128,12 @@ public class Types {
         return null;
       }
     },
-    MAP(MAP_TYPE_TYPE) {
+    MAP(Tuple.INSTANCE) {
+      @Override
+      public Field getField() {
+        throw new UnsupportedOperationException("Cannot get simple field for Map type");
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
          return new MapVector(name, allocator, callBack);
@@ -135,7 +145,12 @@ public class Types {
       }
     },   //  an empty map column.  Useful for conceptual setup.  Children listed within here
 
-    TINYINT(TINYINT_TYPE_TYPE) {
+    TINYINT(new Int(8, true)) {
+      @Override
+      public Field getField() {
+        return TINYINT_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableTinyIntVector(name, allocator);
@@ -146,7 +161,12 @@ public class Types {
         return new TinyIntWriterImpl((NullableTinyIntVector) vector);
       }
     },   //  single byte signed integer
-    SMALLINT(SMALLINT_TYPE_TYPE) {
+    SMALLINT(new Int(16, true)) {
+      @Override
+      public Field getField() {
+        return SMALLINT_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new SmallIntVector(name, allocator);
@@ -157,7 +177,12 @@ public class Types {
         return new SmallIntWriterImpl((NullableSmallIntVector) vector);
       }
     },   //  two byte signed integer
-    INT(INT_TYPE_TYPE) {
+    INT(new Int(32, true)) {
+      @Override
+      public Field getField() {
+        return INT_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableIntVector(name, allocator);
@@ -168,7 +193,12 @@ public class Types {
         return new IntWriterImpl((NullableIntVector) vector);
       }
     },   //  four byte signed integer
-    BIGINT(BIGINT_TYPE_TYPE) {
+    BIGINT(new Int(64, true)) {
+      @Override
+      public Field getField() {
+        return BIGINT_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableBigIntVector(name, allocator);
@@ -179,7 +209,12 @@ public class Types {
         return new BigIntWriterImpl((NullableBigIntVector) vector);
       }
     },   //  eight byte signed integer
-    DATE(DATE_TYPE_TYPE) {
+    DATE(Date.INSTANCE) {
+      @Override
+      public Field getField() {
+        return DATE_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableDateVector(name, allocator);
@@ -190,7 +225,12 @@ public class Types {
         return new DateWriterImpl((NullableDateVector) vector);
       }
     },   //  days since 4713bc
-    TIME(TIME_TYPE_TYPE) {
+    TIME(Time.INSTANCE) {
+      @Override
+      public Field getField() {
+        return TIME_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableTimeVector(name, allocator);
@@ -201,7 +241,12 @@ public class Types {
         return new TimeWriterImpl((NullableTimeVector) vector);
       }
     },   //  time in micros before or after 2000/1/1
-    TIMESTAMP(TIMESTAMP_TYPE_TYPE) {
+    TIMESTAMP(new Timestamp("")) {
+      @Override
+      public Field getField() {
+        return TIMESTAMP_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableTimeStampVector(name, allocator);
@@ -212,7 +257,12 @@ public class Types {
         return new TimeStampWriterImpl((NullableTimeStampVector) vector);
       }
     },
-    INTERVALDAY(INTERVALDAY_TYPE_TYPE) {
+    INTERVALDAY(IntervalDay.INSTANCE) {
+      @Override
+      public Field getField() {
+        return INTERVALDAY_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableIntervalDayVector(name, allocator);
@@ -223,7 +273,12 @@ public class Types {
         return new IntervalDayWriterImpl((NullableIntervalDayVector) vector);
       }
     },
-    INTERVALYEAR(INTERVALYEAR_TYPE_TYPE) {
+    INTERVALYEAR(IntervalYear.INSTANCE) {
+      @Override
+      public Field getField() {
+        return INTERVALYEAR_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableIntervalDayVector(name, allocator);
@@ -234,7 +289,12 @@ public class Types {
         return new IntervalYearWriterImpl((NullableIntervalYearVector) vector);
       }
     },
-    FLOAT4(FLOAT4_TYPE_TYPE) {
+    FLOAT4(new FloatingPoint(0)) {
+      @Override
+      public Field getField() {
+        return FLOAT4_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableFloat4Vector(name, allocator);
@@ -245,7 +305,12 @@ public class Types {
         return new Float4WriterImpl((NullableFloat4Vector) vector);
       }
     },   //  4 byte ieee 754
-    FLOAT8(FLOAT8_TYPE_TYPE) {
+    FLOAT8(new FloatingPoint(1)) {
+      @Override
+      public Field getField() {
+        return FLOAT8_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableFloat8Vector(name, allocator);
@@ -256,7 +321,12 @@ public class Types {
         return new Float8WriterImpl((NullableFloat8Vector) vector);
       }
     },   //  8 byte ieee 754
-    BIT(BIT_TYPE_TYPE) {
+    BIT(Bit.INSTANCE) {
+      @Override
+      public Field getField() {
+        return BIT_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableBitVector(name, allocator);
@@ -267,7 +337,12 @@ public class Types {
         return new BitWriterImpl((NullableBitVector) vector);
       }
     },  //  single bit value (boolean)
-    VARCHAR(VARCHAR_TYPE_TYPE) {
+    VARCHAR(Utf8.INSTANCE) {
+      @Override
+      public Field getField() {
+        return VARCHAR_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableVarCharVector(name, allocator);
@@ -278,7 +353,12 @@ public class Types {
         return new VarCharWriterImpl((NullableVarCharVector) vector);
       }
     },   //  utf8 variable length string
-    VARBINARY(VARBINARY_TYPE_TYPE) {
+    VARBINARY(Binary.INSTANCE) {
+      @Override
+      public Field getField() {
+        return VARBINARY_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableVarBinaryVector(name, allocator);
@@ -289,7 +369,16 @@ public class Types {
         return new VarBinaryWriterImpl((NullableVarBinaryVector) vector);
       }
     },   //  variable length binary
-    DECIMAL(DECIMAL_TYPE_TYPE) {
+    DECIMAL(null) {
+      @Override
+      public ArrowType getType() {
+        throw new UnsupportedOperationException("Cannot get simple type for Decimal type");
+      }
+      @Override
+      public Field getField() {
+        throw new UnsupportedOperationException("Cannot get simple field for Decimal type");
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableDecimalVector(name, allocator, precisionScale[0], precisionScale[1]);
@@ -300,7 +389,12 @@ public class Types {
         return new VarBinaryWriterImpl((NullableVarBinaryVector) vector);
       }
     },   //  variable length binary
-    UINT1(UINT1_TYPE_TYPE) {
+    UINT1(new Int(8, false)) {
+      @Override
+      public Field getField() {
+        return UINT1_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableUInt1Vector(name, allocator);
@@ -311,7 +405,12 @@ public class Types {
         return new UInt1WriterImpl((NullableUInt1Vector) vector);
       }
     },  //  unsigned 1 byte integer
-    UINT2(UINT2_TYPE_TYPE) {
+    UINT2(new Int(16, false)) {
+      @Override
+      public Field getField() {
+        return UINT2_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableUInt2Vector(name, allocator);
@@ -322,7 +421,12 @@ public class Types {
         return new UInt2WriterImpl((NullableUInt2Vector) vector);
       }
     },  //  unsigned 2 byte integer
-    UINT4(UINT4_TYPE_TYPE) {
+    UINT4(new Int(32, false)) {
+      @Override
+      public Field getField() {
+        return UINT8_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableUInt4Vector(name, allocator);
@@ -333,7 +437,12 @@ public class Types {
         return new UInt4WriterImpl((NullableUInt4Vector) vector);
       }
     },   //  unsigned 4 byte integer
-    UINT8(UINT8_TYPE_TYPE) {
+    UINT8(new Int(64, false)) {
+      @Override
+      public Field getField() {
+        return UINT8_FIELD;
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new NullableUInt8Vector(name, allocator);
@@ -344,7 +453,12 @@ public class Types {
         return new UInt8WriterImpl((NullableUInt8Vector) vector);
       }
     },   //  unsigned 8 byte integer
-    LIST(LIST_TYPE_TYPE) {
+    LIST(List.INSTANCE) {
+      @Override
+      public Field getField() {
+        throw new UnsupportedOperationException("Cannot get simple field for List type");
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new ListVector(name, allocator, callBack);
@@ -355,7 +469,12 @@ public class Types {
         return new UnionListWriter((ListVector) vector);
       }
     },
-    UNION(UNION_TYPE_TYPE) {
+    UNION(Union.INSTANCE) {
+      @Override
+      public Field getField() {
+        throw new UnsupportedOperationException("Cannot get simple field for Union type");
+      }
+
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
         return new UnionVector(name, allocator, callBack);
@@ -367,18 +486,39 @@ public class Types {
       }
     };
 
-    private final byte typeType;
+    private final ArrowType type;
 
-    MinorType(byte typeType) {
-      this.typeType = typeType;
+    MinorType(ArrowType type) {
+      this.type = type;
     }
 
-    public byte getTypeType() {
-      return typeType;
+    public ArrowType getType() {
+      return type;
     }
+
+    public abstract Field getField();
 
     public abstract ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale);
 
     public abstract FieldWriter getNewFieldWriter(ValueVector vector);
   }
+
+  private static final Map<ArrowType,MinorType> ARROW_TYPE_MINOR_TYPE_MAP;
+
+  public static MinorType getMinorTypeForArrowType(ArrowType arrowType) {
+    if (arrowType.getTypeType() == Type.Decimal) {
+      return MinorType.DECIMAL;
+    }
+    return ARROW_TYPE_MINOR_TYPE_MAP.get(arrowType);
+  }
+
+  static {
+    ARROW_TYPE_MINOR_TYPE_MAP = new HashMap<>();
+    for (MinorType minorType : MinorType.values()) {
+      if (minorType != MinorType.DECIMAL) {
+        ARROW_TYPE_MINOR_TYPE_MAP.put(minorType.getType(), minorType);
+      }
+    }
+  }
+
 }

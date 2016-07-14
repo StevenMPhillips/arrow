@@ -46,6 +46,7 @@ public final class ${className} extends BaseDataValueVector implements <#if type
 
   private final String bitsField = "$bits$";
   private final String valuesField = "$values$";
+  private final Field field;
 
   final UInt1Vector bits = new UInt1Vector(bitsField, allocator);
   final ${valuesName} values;
@@ -64,6 +65,7 @@ public final class ${className} extends BaseDataValueVector implements <#if type
     this.scale = scale;
     mutator = new Mutator();
     accessor = new Accessor();
+    field = new Field(name, true, new Decimal(precision, scale), null);
   }
   <#else>
   public ${className}(String name, BufferAllocator allocator) {
@@ -71,68 +73,43 @@ public final class ${className} extends BaseDataValueVector implements <#if type
     values = new ${minor.class}Vector(valuesField, allocator);
     mutator = new Mutator();
     accessor = new Accessor();
+  <#if minor.class == "TinyInt" ||
+        minor.class == "SmallInt" ||
+        minor.class == "Int" ||
+        minor.class == "BigInt">
+    field = new Field(name, true, new Int(${type.width} * 8, true), null);
+  <#elseif minor.class == "UInt1" ||
+        minor.class == "UInt2" ||
+        minor.class == "UInt4" ||
+        minor.class == "UInt8">
+    field = new Field(name, true, new Int(${type.width} * 8, false), null);
+  <#elseif minor.class == "Date">
+    field = new Field(name, true, new org.apache.arrow.vector.types.pojo.ArrowType.Date(), null);
+  <#elseif minor.class == "Time">
+    field = new Field(name, true, new org.apache.arrow.vector.types.pojo.ArrowType.Time(), null);
+  <#elseif minor.class == "Float4">
+    field = new Field(name, true, new FloatingPoint(0), null);
+  <#elseif minor.class == "Float8">
+    field = new Field(name, true, new FloatingPoint(1), null);
+  <#elseif minor.class == "TimeStamp">
+    field = new Field(name, true, new org.apache.arrow.vector.types.pojo.ArrowType.Timestamp(""), null);
+  <#elseif minor.class == "IntervalDay">
+    field = new Field(name, true, new IntervalDay(), null);
+  <#elseif minor.class == "IntervalYear">
+    field = new Field(name, true, new IntervalYear(), null);
+  <#elseif minor.class == "VarChar">
+    field = new Field(name, true, new Utf8(), null);
+  <#elseif minor.class == "VarBinary">
+    field = new Field(name, true, new Binary(), null);
+  <#elseif minor.class == "Bit">
+    field = new Field(name, true, new Bit(), null);
+  </#if>
   }
   </#if>
 
   @Override
-  public int getField(FlatBufferBuilder builder) {
-    int nameOffset = builder.createString(name);
-<#if minor.class == "TinyInt" ||
-    minor.class == "SmallInt" ||
-    minor.class == "Int" ||
-    minor.class == "BigInt">
-    int typeOffset = Int.createInt(builder, ${type.width} * 8, true);
-    byte type = Type.Int;
-<#elseif minor.class == "UInt1" ||
-    minor.class == "UInt2" ||
-    minor.class == "UInt4" ||
-    minor.class == "UInt8">
-    int typeOffset = Int.createInt(builder, ${type.width} * 8, false);
-    byte type = Type.Int;
-<#elseif minor.class == "Date">
-    org.apache.arrow.flatbuf.Date.startDate(builder);
-    int typeOffset = org.apache.arrow.flatbuf.Date.endDate(builder);
-    byte type = Type.Date;
-<#elseif minor.class == "Time">
-    org.apache.arrow.flatbuf.Time.startTime(builder);
-    int typeOffset = org.apache.arrow.flatbuf.Time.endTime(builder);
-    byte type = Type.Time;
-<#elseif minor.class == "Float4">
-    int typeOffset = org.apache.arrow.flatbuf.FloatingPoint.createFloatingPoint(builder, Precision.SINGLE);
-    byte type = Type.FloatingPoint;
-<#elseif minor.class == "Float8">
-    int typeOffset = org.apache.arrow.flatbuf.FloatingPoint.createFloatingPoint(builder, Precision.DOUBLE);
-    byte type = Type.FloatingPoint;
-<#elseif minor.class == "TimeStamp">
-    int typeOffset = org.apache.arrow.flatbuf.Timestamp.createTimestamp(builder, 0);
-    byte type = Type.Timestamp;
-<#elseif minor.class == "IntervalDay">
-        IntervalDay.startIntervalDay(builder);
-        int typeOffset = IntervalDay.endIntervalDay(builder);
-        byte type = Type.IntervalDay;
-<#elseif minor.class == "IntervalYear">
-        IntervalYear.startIntervalYear(builder);
-        int typeOffset = IntervalYear.endIntervalYear(builder);
-        byte type = Type.IntervalYear;
-<#elseif minor.class == "VarChar">
-    Utf8.startUtf8(builder);
-    int typeOffset = Utf8.endUtf8(builder);
-    byte type = Type.Utf8;
-<#elseif minor.class == "VarBinary">
-    Binary.startBinary(builder);
-    int typeOffset = Binary.endBinary(builder);
-    byte type = Type.Binary;
-<#elseif minor.class == "Decimal">
-    int typeOffset = Decimal.createDecimal(builder, precision, scale);
-    byte type = Type.Decimal;
-<#elseif minor.class == "Bit">
-    Bit.startBit(builder);
-    int typeOffset = Bit.endBit(builder);
-    byte type = Type.Bit;
-</#if>
-    int[] data = new int[] {};
-    int childrenOffset = Field.createChildrenVector(builder, data);
-    return Field.createField(builder, nameOffset, true, type, typeOffset, childrenOffset);
+  public Field getField() {
+    return field;
   }
 
   @Override

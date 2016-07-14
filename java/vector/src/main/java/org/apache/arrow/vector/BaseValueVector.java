@@ -20,7 +20,6 @@ package org.apache.arrow.vector;
 import java.util.Iterator;
 
 import com.google.flatbuffers.FlatBufferBuilder;
-import org.apache.arrow.flatbuf.Field;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.util.TransferPair;
 import org.slf4j.Logger;
@@ -45,16 +44,6 @@ public abstract class BaseValueVector implements ValueVector {
     this.allocator = Preconditions.checkNotNull(allocator, "allocator cannot be null");
     this.name = name;
   }
-
-  @Override
-  public Field getField() {
-    FlatBufferBuilder builder = new FlatBufferBuilder();
-    int root = getField(builder);
-    builder.finish(root);
-    return Field.getRootAsField(builder.dataBuffer());
-  }
-
-  public abstract int getField(FlatBufferBuilder builder);
 
   @Override
   public String toString() {

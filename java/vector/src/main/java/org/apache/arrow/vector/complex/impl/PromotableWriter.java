@@ -17,9 +17,6 @@
  */
 package org.apache.arrow.vector.complex.impl;
 
-import java.lang.reflect.Constructor;
-
-import org.apache.arrow.flatbuf.Field;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.ZeroVector;
 import org.apache.arrow.vector.complex.AbstractMapVector;
@@ -27,6 +24,7 @@ import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.UnionVector;
 import org.apache.arrow.vector.complex.writer.FieldWriter;
 import org.apache.arrow.vector.types.Types.MinorType;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.TransferPair;
 
 /**
@@ -122,7 +120,7 @@ public class PromotableWriter extends AbstractPromotableFieldWriter {
   }
 
   private FieldWriter promoteToUnion() {
-    String name = vector.getField().name();
+    String name = vector.getField().getName();
     TransferPair tp = vector.getTransferPair(vector.getMinorType().name().toLowerCase(), vector.getAllocator());
     tp.transfer();
     if (parentContainer != null) {

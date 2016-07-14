@@ -16,6 +16,9 @@
  * limitations under the License.
  */
 
+import org.apache.arrow.vector.types.pojo.ArrowType.Null;
+import org.apache.arrow.vector.types.pojo.Field;
+
 <@pp.dropOutputFile />
 <@pp.changeOutputFile name="/org/apache/arrow/vector/complex/impl/NullReader.java" />
 
@@ -49,7 +52,13 @@ public class NullReader extends AbstractBaseReader implements FieldReader{
   public MinorType getMinorType() {
     return type;
   }
-  
+
+
+  @Override
+  public Field getField() {
+    return new Field("", true, new Null(), null);
+  }
+
   public void copyAsValue(MapWriter writer) {}
 
   public void copyAsValue(ListWriter writer) {}

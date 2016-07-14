@@ -24,10 +24,11 @@ import io.netty.buffer.*;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-import org.apache.arrow.flatbuf.*;
 import org.apache.arrow.memory.*;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.Types.*;
+import org.apache.arrow.vector.types.pojo.*;
+import org.apache.arrow.vector.types.pojo.ArrowType.*;
 import org.apache.arrow.vector.types.*;
 import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.holders.*;

@@ -18,9 +18,6 @@
 package org.apache.arrow.vector.complex.writer;
 
 import io.netty.buffer.ArrowBuf;
-import org.apache.arrow.flatbuf.Field;
-import org.apache.arrow.flatbuf.Int;
-import org.apache.arrow.flatbuf.Type;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.complex.ListVector;
@@ -37,6 +34,10 @@ import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.complex.writer.BaseWriter.ComplexWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter.ListWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter.MapWriter;
+import org.apache.arrow.vector.types.pojo.ArrowType.Int;
+import org.apache.arrow.vector.types.pojo.ArrowType.Union;
+import org.apache.arrow.vector.types.pojo.ArrowType.Utf8;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -234,13 +235,13 @@ public class TestComplexWriter {
       bigIntWriter.setPosition(i);
       bigIntWriter.writeBigInt(i);
     }
-    Field field = parent.getField().children(0).children(0);
-    Assert.assertEquals("a", field.name());
-    Assert.assertEquals(Type.Int, field.typeType());
-    Int intType = (Int) field.type(new Int());
+    Field field = parent.getField().getChildren().get(0).getChildren().get(0);
+    Assert.assertEquals("a", field.getName());
+    Assert.assertEquals(Int.TYPE_TYPE, field.getType().getTypeType());
+    Int intType = (Int) field.getType();
 
-    Assert.assertEquals(64, intType.bitWidth());
-    Assert.assertTrue(intType.isSigned());
+    Assert.assertEquals(64, intType.getBitWidth());
+    Assert.assertTrue(intType.getIsSigned());
     for (int i = 100; i < 200; i++) {
       VarCharWriter varCharWriter = rootWriter.varChar("a");
       varCharWriter.setPosition(i);
@@ -249,11 +250,11 @@ public class TestComplexWriter {
       tempBuf.setBytes(0, bytes);
       varCharWriter.writeVarChar(0, bytes.length, tempBuf);
     }
-    field = parent.getField().children(0).children(0);
-    Assert.assertEquals("a", field.name());
-    Assert.assertEquals(Type.Union, field.typeType());
-    Assert.assertEquals(Type.Int, field.children(0).typeType());
-    Assert.assertEquals(Type.Utf8, field.children(1).typeType());
+    field = parent.getField().getChildren().get(0).getChildren().get(0);
+    Assert.assertEquals("a", field.getName());
+    Assert.assertEquals(Union.TYPE_TYPE, field.getType().getTypeType());
+    Assert.assertEquals(Int.TYPE_TYPE, field.getChildren().get(0).getType().getTypeType());
+    Assert.assertEquals(Utf8.TYPE_TYPE, field.getChildren().get(1).getType().getTypeType());
     MapReader rootReader = new SingleMapReaderImpl(parent).reader("root");
     for (int i = 0; i < 100; i++) {
       rootReader.setPosition(i);

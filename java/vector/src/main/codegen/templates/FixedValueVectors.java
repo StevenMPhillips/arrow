@@ -59,7 +59,7 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements F
   }
 
   @Override
-  public int getField(FlatBufferBuilder builder) {
+  public Field getField() {
         throw new UnsupportedOperationException("internal vector");
   }
 
