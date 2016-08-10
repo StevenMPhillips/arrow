@@ -99,11 +99,11 @@ public class TestComplexWriter {
     ListVector listVector = new ListVector("list", allocator, null);
     listVector.allocateNew();
     UnionListWriter listWriter = new UnionListWriter(listVector);
+    MapWriter mapWriter = listWriter.map();
     for (int i = 0; i < 10000; i++) {
       listWriter.setPosition(i);
       listWriter.startList();
       for (int j = 0; j < i % 7; j++) {
-        MapWriter mapWriter = listWriter.map();
         mapWriter.start();
         mapWriter.integer("int").writeInt(j);
         mapWriter.bigInt("bigInt").writeBigInt(j);

@@ -21,6 +21,7 @@ package org.apache.arrow.vector.types.pojo;
 import com.google.flatbuffers.FlatBufferBuilder;
 
 import java.util.List;
+import java.util.Objects;
 
 public class Field {
   private final String name;
@@ -67,5 +68,18 @@ public class Field {
 
   public List<Field> getChildren() {
     return children;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof Field)) {
+      return false;
+    }
+    Field that = (Field) obj;
+    return Objects.equals(this.name, that.name) &&
+            Objects.equals(this.nullable, that.nullable) &&
+            Objects.equals(this.type, that.type) &&
+            Objects.equals(this.children, that.children);
+
   }
 }

@@ -17,6 +17,7 @@
  */
 package org.apache.arrow.vector.complex;
 
+import com.google.common.collect.ImmutableList;
 import io.netty.buffer.ArrowBuf;
 
 import java.util.ArrayList;
@@ -197,7 +198,11 @@ public abstract class AbstractMapVector extends AbstractContainerVector {
   }
 
   protected List<String> getChildFieldNames() {
-    return vectors.keyList();
+    ImmutableList.Builder<String> builder = ImmutableList.builder();
+    for (ValueVector child : getChildren()) {
+      builder.add(child.getField().getName());
+    }
+    return builder.build();
   }
 
   /**

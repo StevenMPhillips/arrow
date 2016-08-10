@@ -81,6 +81,12 @@ public class UnionListWriter extends AbstractFieldWriter {
 
   }
 
+  @Override
+  public void setPosition(int index) {
+    super.setPosition(index);
+    startList();
+  }
+
   <#list vv.types as type><#list type.minor as minor><#assign name = minor.class?cap_first />
   <#assign fields = minor.fields!type.fields />
   <#assign uncappedName = name?uncap_first/>
@@ -94,7 +100,7 @@ public class UnionListWriter extends AbstractFieldWriter {
 
   @Override
   public ${name}Writer <#if uncappedName == "int">integer<#else>${uncappedName}</#if>(String name) {
-    assert inMap;
+//    assert inMap;
     mapName = name;
     final int nextOffset = offsets.getAccessor().get(idx() + 1);
     vector.getMutator().setNotNull(idx());
@@ -149,7 +155,7 @@ public class UnionListWriter extends AbstractFieldWriter {
 
   @Override
   public void start() {
-    assert inMap;
+//    assert inMap;
     final int nextOffset = offsets.getAccessor().get(idx() + 1);
     vector.getMutator().setNotNull(idx());
     offsets.getMutator().setSafe(idx() + 1, nextOffset);
@@ -158,11 +164,11 @@ public class UnionListWriter extends AbstractFieldWriter {
 
   @Override
   public void end() {
-    if (inMap) {
+//    if (inMap) {
       inMap = false;
       final int nextOffset = offsets.getAccessor().get(idx() + 1);
       offsets.getMutator().setSafe(idx() + 1, nextOffset + 1);
-    }
+//    }
   }
 
   <#list vv.types as type><#list type.minor as minor><#assign name = minor.class?cap_first />
@@ -173,7 +179,7 @@ public class UnionListWriter extends AbstractFieldWriter {
 
   @Override
   public void write${name}(<#list fields as field>${field.type} ${field.name}<#if field_has_next>, </#if></#list>) {
-    assert !inMap;
+//    assert !inMap;
     final int nextOffset = offsets.getAccessor().get(idx() + 1);
     vector.getMutator().setNotNull(idx());
     writer.setPosition(nextOffset);

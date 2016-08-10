@@ -45,7 +45,8 @@ public final class ${className} implements ValueHolder{
     <#else>
     public static final int WIDTH = ${type.width};
     
-    <#if mode.name == "Optional">public int isSet;</#if>
+    <#if mode.name == "Optional">public int isSet;
+    <#else>public final int isSet = 1;</#if>
     <#assign fields = minor.fields!type.fields />
     <#list fields as field>
     public ${field.type} ${field.name};

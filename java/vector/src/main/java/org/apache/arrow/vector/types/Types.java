@@ -120,7 +120,7 @@ public class Types {
 
       @Override
       public ValueVector getNewVector(String name, BufferAllocator allocator, CallBack callBack, int... precisionScale) {
-        return new ZeroVector();
+        return ZeroVector.INSTANCE;
       }
 
       @Override

@@ -78,7 +78,7 @@ public class MapVector extends AbstractMapVector {
   }
 
   public Iterator<String> fieldNameIterator() {
-    throw new UnsupportedOperationException();
+    return getChildFieldNames().iterator();
   }
 
   @Override

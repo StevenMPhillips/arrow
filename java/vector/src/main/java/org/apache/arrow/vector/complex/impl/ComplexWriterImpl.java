@@ -173,7 +173,11 @@ public class ComplexWriterImpl extends AbstractFieldWriter implements ComplexWri
     switch(mode){
 
     case INIT:
+      int vectorCount = container.size();
       ListVector listVector = container.addOrGet(name, MinorType.LIST, ListVector.class);
+      if (container.size() > vectorCount) {
+        listVector.allocateNew();
+      }
       listRoot = new UnionListWriter(listVector);
       listRoot.setPosition(idx());
       mode = Mode.LIST;

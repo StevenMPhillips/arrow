@@ -152,7 +152,7 @@ public abstract class BaseRepeatedValueVector extends BaseValueVector implements
 
   public <T extends ValueVector> AddOrGetResult<T> addOrGetVector(MinorType minorType) {
     boolean created = false;
-    if (vector == DEFAULT_DATA_VECTOR) {
+    if (vector instanceof ZeroVector) {
       vector = minorType.getNewVector(DATA_VECTOR_NAME, allocator, null);
       // returned vector must have the same field
       created = true;

@@ -24,7 +24,7 @@ public class UnionHolder implements ValueHolder {
   public FieldReader reader;
   public int isSet;
 
-  public MinorType getType() {
+  public MinorType getMinorType() {
     return reader.getMinorType();
   }
 
