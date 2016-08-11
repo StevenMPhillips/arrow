@@ -80,6 +80,12 @@ public class UnionListReader extends AbstractFieldReader {
   }
 
   @Override
+  public int size() {
+    int size = maxOffset - currentOffset - 1;
+    return size < 0 ? 0 : size;
+  }
+
+  @Override
   public boolean next() {
     if (currentOffset + 1 < maxOffset) {
       data.getReader().setPosition(++currentOffset);

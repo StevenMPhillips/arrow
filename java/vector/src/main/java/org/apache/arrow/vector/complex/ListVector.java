@@ -73,15 +73,6 @@ public class ListVector extends BaseRepeatedValueVector {
     bits.allocateNewSafe();
   }
 
-  public void transferTo(ListVector target) {
-    offsets.makeTransferPair(target.offsets).transfer();
-    bits.makeTransferPair(target.bits).transfer();
-    if (target.getDataVector() instanceof ZeroVector) {
-      target.addOrGetVector(vector.getMinorType());
-    }
-    getDataVector().makeTransferPair(target.getDataVector()).transfer();
-  }
-
   public void copyFromSafe(int inIndex, int outIndex, ListVector from) {
     copyFrom(inIndex, outIndex, from);
   }
@@ -112,20 +103,28 @@ public class ListVector extends BaseRepeatedValueVector {
   private class TransferImpl implements TransferPair {
 
     ListVector to;
+    TransferPair pairs[] = new TransferPair[3];
 
     public TransferImpl(String name, BufferAllocator allocator) {
-      to = new ListVector(name, allocator, null);
-      to.addOrGetVector(vector.getMinorType());
+      this(new ListVector(name, allocator, null));
     }
 
     public TransferImpl(ListVector to) {
       this.to = to;
       to.addOrGetVector(vector.getMinorType());
+      pairs[0] = offsets.makeTransferPair(to.offsets);
+      pairs[1] = bits.makeTransferPair(to.bits);
+      if (to.getDataVector() instanceof ZeroVector) {
+        to.addOrGetVector(vector.getMinorType());
+      }
+      pairs[2] = getDataVector().makeTransferPair(to.getDataVector());
     }
 
     @Override
     public void transfer() {
-      transferTo(to);
+      for (TransferPair pair : pairs) {
+        pair.transfer();
+      }
     }
 
     @Override
