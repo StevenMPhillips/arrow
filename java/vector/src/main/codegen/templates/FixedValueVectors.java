@@ -49,9 +49,22 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements F
   private int allocationSizeInBytes = INITIAL_VALUE_ALLOCATION * ${type.width};
   private int allocationMonitor = 0;
 
+  <#if minor.class == "Decimal">
+
+  private int precision;
+  private int scale;
+
+  public ${minor.class}Vector(String name, BufferAllocator allocator, int precision, int scale) {
+    super(name, allocator);
+    this.precision = precision;
+    this.scale = scale;
+  }
+  <#else>
   public ${minor.class}Vector(String name, BufferAllocator allocator) {
     super(name, allocator);
   }
+  </#if>
+
 
   @Override
   public MinorType getMinorType() {
@@ -190,23 +203,6 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements F
     data.setZero(0, data.capacity());
   }
 
-//  @Override
-//  public void load(SerializedField metadata, ArrowBuf buffer) {
-//    Preconditions.checkArgument(this.field.getPath().equals(metadata.getNamePart().getName()), "The field %s doesn't match the provided metadata %s.", this.field, metadata);
-//    final int actualLength = metadata.getBufferLength();
-//    final int valueCount = metadata.getValueCount();
-//    final int expectedLength = valueCount * ${type.width};
-//    assert actualLength == expectedLength : String.format("Expected to load %d bytes but actually loaded %d bytes", expectedLength, actualLength);
-//
-//    clear();
-//    if (data != null) {
-//      data.release(1);
-//    }
-//    data = buffer.slice(0, actualLength);
-//    data.retain(1);
-//    data.writerIndex(actualLength);
-//    }
-
   public TransferPair getTransferPair(BufferAllocator allocator){
     return new TransferImpl(name, allocator);
   }
@@ -240,7 +236,11 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements F
     private ${minor.class}Vector to;
 
     public TransferImpl(String name, BufferAllocator allocator){
+      <#if minor.class == "Decimal">
+      to = new ${minor.class}Vector(name, allocator, precision, scale);
+      <#else>
       to = new ${minor.class}Vector(name, allocator);
+      </#if>
     }
 
     public TransferImpl(${minor.class}Vector to) {
@@ -425,31 +425,30 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements F
               append(millis));
     }
 
-    <#elseif (minor.class == "Decimal28Sparse") || (minor.class == "Decimal38Sparse") || (minor.class == "Decimal28Dense") || (minor.class == "Decimal38Dense")>
+    <#elseif minor.class == "Decimal">
 
     public void get(int index, ${minor.class}Holder holder) {
         holder.start = index * ${type.width};
         holder.buffer = data;
-        holder.scale = getField().getScale();
-        holder.precision = getField().getPrecision();
+        holder.scale = scale;
+        holder.precision = precision;
     }
 
     public void get(int index, Nullable${minor.class}Holder holder) {
         holder.isSet = 1;
         holder.start = index * ${type.width};
         holder.buffer = data;
-        holder.scale = getField().getScale();
-        holder.precision = getField().getPrecision();
+        holder.scale = scale;
+        holder.precision = precision;
     }
 
-      @Override
-      public ${friendlyType} getObject(int index) {
-      <#if (minor.class == "Decimal28Sparse") || (minor.class == "Decimal38Sparse")>
-      // Get the BigDecimal object
-      return org.apache.arrow.vector.util.DecimalUtility.getBigDecimalFromSparse(data, index * ${type.width}, ${minor.nDecimalDigits}, getField().getScale());
-      <#else>
-      return org.apache.arrow.vector.util.DecimalUtility.getBigDecimalFromDense(data, index * ${type.width}, ${minor.nDecimalDigits}, getField().getScale(), ${minor.maxPrecisionDigits}, ${type.width});
-      </#if>
+    @Override
+    public ${friendlyType} getObject(int index) {
+      byte[] bytes = new byte[${type.width}];
+      int start = ${type.width} * index;
+      data.getBytes(start, bytes, 0, ${type.width});
+      ${friendlyType} value = new BigDecimal(new BigInteger(bytes), scale);
+      return value;
     }
 
     <#else>
@@ -662,7 +661,7 @@ public final class ${minor.class}Vector extends BaseDataValueVector implements F
      setSafe(index, holder.days, holder.milliseconds);
    }
 
-   <#elseif (minor.class == "Decimal28Sparse" || minor.class == "Decimal38Sparse") || (minor.class == "Decimal28Dense") || (minor.class == "Decimal38Dense")>
+   <#elseif minor.class == "Decimal">
 
    public void set(int index, ${minor.class}Holder holder){
      set(index, holder.start, holder.buffer);

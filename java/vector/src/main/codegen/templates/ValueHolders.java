@@ -52,11 +52,6 @@ public final class ${className} implements ValueHolder{
     public ${field.type} ${field.name};
     </#list>
     
-    <#if minor.class.startsWith("Decimal")>
-    public int precision;
-    public int scale;
-    </#if>
-    
     @Deprecated
     public int hashCode(){
       throw new UnsupportedOperationException();

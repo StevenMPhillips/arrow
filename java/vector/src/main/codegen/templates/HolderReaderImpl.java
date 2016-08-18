@@ -122,8 +122,6 @@ public class ${holderMode}${name}HolderReaderImpl extends AbstractFieldReader {
       Text text = new Text();
       text.set(value);
       return text;
-<#elseif minor.class == "Decimal" >
-        return new BigDecimal(new BigInteger(value), holder.scale);
 </#if>
 
 <#elseif minor.class == "Interval">
@@ -134,25 +132,10 @@ public class ${holderMode}${name}HolderReaderImpl extends AbstractFieldReader {
       Period p = new Period();
       return p.plusDays(holder.days).plusMillis(holder.milliseconds);
 
-
-<#elseif minor.class == "Decimal28Dense" ||
-         minor.class == "Decimal38Dense">
-      return org.apache.arrow.vector.util.DecimalUtility.getBigDecimalFromDense(holder.buffer,
-                                                                                holder.start,
-                                                                                holder.nDecimalDigits,
-                                                                                holder.scale,
-                                                                                holder.maxPrecision,
-                                                                                holder.WIDTH);
-
-<#elseif minor.class == "Decimal28Sparse" ||
-         minor.class == "Decimal38Sparse">
-      return org.apache.arrow.vector.util.DecimalUtility.getBigDecimalFromSparse(holder.buffer,
-                                                                                 holder.start,
-                                                                                 holder.nDecimalDigits,
-                                                                                 holder.scale);
-
 <#elseif minor.class == "Bit" >
       return new Boolean(holder.value != 0);
+<#elseif minor.class == "Decimal" >
+        return (BigDecimal) readSingleObject();
 <#else>
       ${friendlyType} value = new ${friendlyType}(this.holder.value);
       return value;
@@ -216,6 +199,11 @@ public class ${holderMode}${name}HolderReaderImpl extends AbstractFieldReader {
 
 <#elseif minor.class == "Bit" >
       return new Boolean(holder.value != 0);
+<#elseif minor.class == "Decimal">
+        byte[] bytes = new byte[${type.width}];
+        holder.buffer.getBytes(holder.start, bytes, 0, ${type.width});
+        ${friendlyType} value = new BigDecimal(new BigInteger(bytes), holder.scale);
+        return value;
 <#else>
       ${friendlyType} value = new ${friendlyType}(this.holder.value);
       return value;

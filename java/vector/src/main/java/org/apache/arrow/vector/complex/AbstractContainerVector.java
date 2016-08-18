@@ -94,7 +94,7 @@ public abstract class AbstractContainerVector implements ValueVector {
   public abstract int size();
 
   // add a new vector with the input MajorType or return the existing vector if we already added one with the same type
-  public abstract <T extends ValueVector> T addOrGet(String name, MinorType minorType, Class<T> clazz);
+  public abstract <T extends ValueVector> T addOrGet(String name, MinorType minorType, Class<T> clazz, int... precisionScale);
 
   // return the child vector with the input name
   public abstract <T extends ValueVector> T getChild(String name, Class<T> clazz);

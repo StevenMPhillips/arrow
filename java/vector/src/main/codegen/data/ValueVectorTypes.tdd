@@ -88,6 +88,16 @@
       ]
     },
     {
+      major: "Fixed",
+      width: 16,
+      javaType: "ArrowBuf",
+      boxedType: "ArrowBuf",
+
+      minor: [
+        { class: "Decimal", maxPrecisionDigits: 38, nDecimalDigits: 4, friendlyType: "BigDecimal", fields: [{name: "start", type: "int"}, {name: "buffer", type: "ArrowBuf"}, {name: "scale", type: "int", include: false}, {name: "precision", type: "int", include: false}] }
+      ]
+    },
+    {
       major: "VarLen",
       width: 4,
       javaType: "int",
@@ -95,7 +105,6 @@
       fields: [{name: "start", type: "int"}, {name: "end", type: "int"}, {name: "buffer", type: "ArrowBuf"}],
       minor: [
         { class: "VarBinary" , friendlyType: "byte[]" },
-        { class: "Decimal" , friendlyType: "BigDecimal" },
         { class: "VarChar" , friendlyType: "Text" }
       ]
     },

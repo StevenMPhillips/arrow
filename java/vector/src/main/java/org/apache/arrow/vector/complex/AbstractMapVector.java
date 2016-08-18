@@ -108,7 +108,7 @@ public abstract class AbstractMapVector extends AbstractContainerVector {
    * @return resultant {@link org.apache.arrow.vector.ValueVector}
    */
   @Override
-  public <T extends ValueVector> T addOrGet(String name, MinorType minorType, Class<T> clazz) {
+  public <T extends ValueVector> T addOrGet(String name, MinorType minorType, Class<T> clazz, int... precisionScale) {
     final ValueVector existing = getChild(name);
     boolean create = false;
     if (existing == null) {
@@ -120,7 +120,7 @@ public abstract class AbstractMapVector extends AbstractContainerVector {
       create = true;
     }
     if (create) {
-      final T vector = (T) minorType.getNewVector(name, allocator, callBack);
+      final T vector = (T) minorType.getNewVector(name, allocator, callBack, precisionScale);
       putChild(name, vector);
       if (callBack!=null) {
         callBack.doWork();
