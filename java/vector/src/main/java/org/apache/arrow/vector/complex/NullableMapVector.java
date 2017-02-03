@@ -35,6 +35,7 @@ import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.holders.ComplexHolder;
 import org.apache.arrow.vector.schema.ArrowFieldNode;
 import org.apache.arrow.vector.types.pojo.DictionaryEncoding;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.CallBack;
 import org.apache.arrow.vector.util.TransferPair;
 
@@ -61,6 +62,12 @@ public class NullableMapVector extends MapVector implements FieldVector {
     this.dictionary = dictionary;
     this.accessor = new Accessor();
     this.mutator = new Mutator();
+  }
+
+  @Override
+  public Field getField() {
+    Field f = super.getField();
+    return new Field(f.getName(), true, f.getType(), f.getChildren());
   }
 
   @Override
@@ -229,12 +236,15 @@ public class NullableMapVector extends MapVector implements FieldVector {
 
   public final class Mutator extends MapVector.Mutator implements NullableVectorDefinitionSetter {
 
+    int lastSet;
+
     private Mutator(){
     }
 
     @Override
     public void setIndexDefined(int index){
       bits.getMutator().setSafe(index, 1);
+      lastSet = index;
     }
 
     public void setNull(int index){
@@ -246,6 +256,7 @@ public class NullableMapVector extends MapVector implements FieldVector {
       assert valueCount >= 0;
       super.setValueCount(valueCount);
       bits.getMutator().setValueCount(valueCount);
+      lastSet = valueCount;
     }
 
     @Override
