@@ -414,6 +414,7 @@ public final class ${className} extends BaseDataValueVector implements <#if type
     if (!fromAccessor.isNull(fromIndex)) {
       mutator.set(thisIndex, fromAccessor.get(fromIndex));
     }
+    <#if type.major == "VarLen">mutator.lastSet = thisIndex;</#if>
   }
 
   public void copyFromSafe(int fromIndex, int thisIndex, ${valuesName} from){
@@ -422,6 +423,7 @@ public final class ${className} extends BaseDataValueVector implements <#if type
     </#if>
     values.copyFromSafe(fromIndex, thisIndex, from);
     bits.getMutator().setSafeToOne(thisIndex);
+    <#if type.major == "VarLen">mutator.lastSet = thisIndex;</#if>
   }
 
   public void copyFromSafe(int fromIndex, int thisIndex, ${className} from){
@@ -430,6 +432,7 @@ public final class ${className} extends BaseDataValueVector implements <#if type
     </#if>
     bits.copyFromSafe(fromIndex, thisIndex, from.bits);
     values.copyFromSafe(fromIndex, thisIndex, from.values);
+    <#if type.major == "VarLen">mutator.lastSet = thisIndex;</#if>
   }
 
   public final class Accessor extends BaseDataValueVector.BaseAccessor <#if type.major = "VarLen">implements VariableWidthVector.VariableWidthAccessor</#if> {
@@ -553,7 +556,7 @@ public final class ${className} extends BaseDataValueVector implements <#if type
       while(index > bits.getValueCapacity()) {
         bits.reAlloc();
       }
-      lastSet = index;
+      lastSet = index - 1;
     }
 
     @Override
