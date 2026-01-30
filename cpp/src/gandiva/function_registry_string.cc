@@ -495,8 +495,10 @@ std::vector<NativeFunction> GetStringFunctionRegistry() {
                      kResultNullIfNull, "split_part",
                      NativeFunction::kNeedsContext | NativeFunction::kCanReturnErrors),
 
-      // ECB mode specific functions
-      // String-based signatures (UTF8, UTF8) -> UTF8
+      NativeFunction("parse_url", {}, DataTypeVector{utf8(), utf8()}, utf8(),
+                     kResultNullInternal, "parse_url_utf8_utf8",
+                     NativeFunction::kNeedsContext),
+
       NativeFunction("aes_encrypt", {}, DataTypeVector{utf8(), utf8()}, utf8(),
                      kResultNullIfNull, "gdv_fn_aes_encrypt_ecb_legacy",
                      NativeFunction::kNeedsContext | NativeFunction::kCanReturnErrors),
