@@ -2935,80 +2935,75 @@ static char mappings[] = {'0', '1', '2', '3', '0', '1', '2', '0', '0',
 FORCE_INLINE
 const char* soundex_utf8(gdv_int64 context, const char* in, gdv_int32 in_len,
                          bool in_validity, bool* out_valid, int32_t* out_len) {
+  if (!in_validity) {
+    *out_valid = false;
+    *out_len = 0;
+    return "";
+  }
+
   if (in_len <= 0) {
     *out_valid = true;
     *out_len = 0;
     return "";
   }
 
-  // The soundex code is composed by one letter and three numbers
-  char* soundex = reinterpret_cast<char*>(gdv_fn_context_arena_malloc(context, in_len));
+  // The soundex code is composed by one letter and three numbers.
+  // Output is always 4 bytes (not null-terminated).
   char* ret = reinterpret_cast<char*>(gdv_fn_context_arena_malloc(context, 4));
-
-  if (soundex == nullptr || ret == nullptr) {
+  if (ret == nullptr) {
     gdv_fn_context_set_error_msg(context, "Could not allocate memory for output string");
     *out_valid = false;
     *out_len = 0;
     return "";
   }
 
-  int si = 1;
-  int ret_len = 1;
-  unsigned char c;
-
+  // Find first alphabetic character and retain it.
   int start_idx = 0;
   for (int i = 0; i < in_len; ++i) {
     if (isalpha(in[i]) > 0) {
-      // Retain the first letter
       ret[0] = toupper(in[i]);
       start_idx = i + 1;
       break;
     }
   }
 
-  // If ret[0] is not initialised, return validity false
+  // If no alphabetic character exists, return invalid.
   if (start_idx == 0) {
     *out_valid = false;
     *out_len = 0;
     return "";
   }
 
-  soundex[0] = '\0';
-  // Replace consonants with digits and special letters with 0
-  for (int i = start_idx; i < in_len; i++) {
-    if (isalpha(in[i]) > 0) {
-      c = toupper(in[i]) - 65;
-      if (mappings[c] != soundex[si - 1]) {
-        soundex[si] = mappings[c];
-        si++;
-      }
-    }
-  }
+  // Build digits:
+  // 1. Remove vowels and H/W/Y (mapped to '0').
+  // 2. Remove consecutive duplicate codes.
+  // 3. Pad with zeros or truncate to length 4.
+  int ret_len = 1;
+  char last_digit = mappings[ret[0] - 65];
 
-  int i = 1;
-  // If the saved letter's digit is the same as the resulting first digit, skip it
-  if (si > 1) {
-    if (soundex[1] == mappings[ret[0] - 65]) {
-      i = 2;
+  for (int i = start_idx; i < in_len && ret_len < 4; ++i) {
+    if (isalpha(in[i]) <= 0) {
+      continue;
     }
 
-    for (; i < si; i++) {
-      // If it is a special letter, we ignore, because it has been dropped in first step
-      if (soundex[i] != '0') {
-        ret[ret_len] = soundex[i];
-        ret_len++;
-      }
-      if (ret_len > 3) break;
+    unsigned char idx = static_cast<unsigned char>(toupper(in[i]) - 65);
+    char digit = mappings[idx];
+    if (digit == '0') {
+      continue;
     }
+
+    if (digit == last_digit) {
+      continue;
+    }
+
+    ret[ret_len++] = digit;
+    last_digit = digit;
   }
 
-  // If the return have too few numbers, append with zeros until there are three
-  if (ret_len <= 3) {
-    while (ret_len <= 3) {
-      ret[ret_len] = '0';
-      ret_len++;
-    }
+  while (ret_len < 4) {
+    ret[ret_len++] = '0';
   }
+
   *out_valid = true;
   *out_len = 4;
   return ret;
