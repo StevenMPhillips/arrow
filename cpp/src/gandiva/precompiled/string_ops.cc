@@ -19,8 +19,6 @@
 #include "arrow/util/logging.h"
 #include "arrow/util/value_parsing.h"
 
-extern "C" {
-
 #include <algorithm>
 #include <cinttypes>
 #include <climits>
@@ -28,6 +26,8 @@ extern "C" {
 #include <cstdlib>
 #include <cstring>
 #include <random>
+
+extern "C" {
 
 #include "./types.h"
 
