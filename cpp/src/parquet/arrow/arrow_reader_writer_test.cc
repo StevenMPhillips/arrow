@@ -24,6 +24,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <algorithm>
+#include <array>
 #include <cstdint>
 #include <functional>
 #include <set>
@@ -57,6 +59,7 @@
 #include "arrow/util/key_value_metadata.h"
 #include "arrow/util/logging_internal.h"
 #include "arrow/util/range.h"
+#include "arrow/util/ubsan.h"
 
 #ifdef ARROW_CSV
 #  include "arrow/csv/api.h"
@@ -378,19 +381,19 @@ const double test_traits<::arrow::DoubleType>::value(4.2);
 template <>
 struct test_traits<::arrow::StringType> {
   static constexpr ParquetType::type parquet_enum = ParquetType::BYTE_ARRAY;
-  static std::string const value;
+  static const std::string value;
 };
 
 template <>
 struct test_traits<::arrow::BinaryType> {
   static constexpr ParquetType::type parquet_enum = ParquetType::BYTE_ARRAY;
-  static std::string const value;
+  static const std::string value;
 };
 
 template <>
 struct test_traits<::arrow::FixedSizeBinaryType> {
   static constexpr ParquetType::type parquet_enum = ParquetType::FIXED_LEN_BYTE_ARRAY;
-  static std::string const value;
+  static const std::string value;
 };
 
 const std::string test_traits<::arrow::StringType>::value("Test");            // NOLINT
@@ -3514,6 +3517,56 @@ TEST(TestArrowReadWrite, NonUniqueDictionaryValues) {
   }
 }
 
+TEST(TestArrowReadWrite, FloatingDictionaryBits) {
+  // Float32: -sNaN(payload=1), +qNaN(payload=2), +0, -0, 1.0f.
+  const std::array<uint32_t, 5> dictionary_bits{0xff800001, 0x7fc00002, 0x00000000,
+                                                0x80000000, 0x3f800000};
+  std::vector<float> dictionary_values(dictionary_bits.size());
+  std::transform(dictionary_bits.begin(), dictionary_bits.end(),
+                 dictionary_values.begin(),
+                 [](uint32_t bits) { return ::arrow::util::SafeCopy<float>(bits); });
+  std::shared_ptr<Array> dictionary;
+  ::arrow::ArrayFromVector<::arrow::FloatType>(dictionary_values, &dictionary);
+  auto indices = ArrayFromJSON(::arrow::int32(), "[0, 0, 1, 2, 3, 4]");
+  ASSERT_OK_AND_ASSIGN(auto values, DictionaryArray::FromArrays(indices, dictionary));
+  auto table =
+      Table::Make(::arrow::schema({::arrow::field("values", values->type())}), {values});
+
+  auto properties = WriterProperties::Builder().enable_write_page_index()->build();
+  ASSERT_OK_AND_ASSIGN(auto buffer,
+                       WriteTableToBuffer(table, table->num_rows(), properties));
+  auto parquet_reader = ParquetFileReader::Open(std::make_shared<BufferReader>(buffer));
+  auto metadata = parquet_reader->metadata();
+  ASSERT_EQ(ColumnOrder::IEEE_754_TOTAL_ORDER,
+            metadata->schema()->Column(0)->column_order().get_order());
+  auto statistics = metadata->RowGroup(0)->ColumnChunk(0)->statistics();
+  ASSERT_EQ(3, statistics->nan_count());
+
+  auto column_index =
+      parquet_reader->GetPageIndexReader()->RowGroup(0)->GetColumnIndex(0);
+  ASSERT_NE(nullptr, column_index);
+  auto nan_counts = column_index->nan_counts();
+  ASSERT_TRUE(nan_counts.has_value());
+  ASSERT_EQ(1U, nan_counts->size());
+  EXPECT_EQ(3, (*nan_counts)[0]);
+
+  std::unique_ptr<FileReader> arrow_reader;
+  FileReaderBuilder builder;
+  ASSERT_OK(builder.Open(std::make_shared<BufferReader>(buffer)));
+  ASSERT_OK(builder.Build(&arrow_reader));
+  std::shared_ptr<Table> read_table;
+  ASSERT_OK(arrow_reader->ReadTable(&read_table));
+  auto actual =
+      checked_pointer_cast<::arrow::FloatArray>(read_table->column(0)->chunk(0));
+  const std::array<uint32_t, 6> expected_bits{dictionary_bits[0], dictionary_bits[0],
+                                              dictionary_bits[1], dictionary_bits[2],
+                                              dictionary_bits[3], dictionary_bits[4]};
+  for (int64_t value_index = 0; value_index < actual->length(); ++value_index) {
+    ASSERT_EQ(expected_bits[value_index],
+              ::arrow::util::SafeCopy<uint32_t>(actual->Value(value_index)));
+  }
+}
+
 TEST(TestArrowReadWrite, DictionaryIndexBitwidthRoundtrip) {
   // GH-30302: the bitwidth of Arrow dictionary indices should be preserved
   for (const auto& index_type :
@@ -5957,11 +6010,12 @@ auto encode_double = [](double value) {
 class ParquetPageIndexRoundTripTest : public ::testing::Test {
  public:
   void WriteFile(const std::shared_ptr<WriterProperties>& writer_properties,
-                 const std::shared_ptr<::arrow::Table>& table) {
+                 const std::shared_ptr<::arrow::Table>& table,
+                 std::shared_ptr<ArrowWriterProperties> arrow_writer_properties =
+                     default_arrow_writer_properties()) {
     // Get schema from table.
     auto schema = table->schema();
     std::shared_ptr<SchemaDescriptor> parquet_schema;
-    auto arrow_writer_properties = default_arrow_writer_properties();
     ASSERT_OK_NO_THROW(ToParquetSchema(schema.get(), *writer_properties,
                                        *arrow_writer_properties, &parquet_schema));
     auto schema_node = std::static_pointer_cast<GroupNode>(parquet_schema->schema_root());
@@ -6210,6 +6264,10 @@ TEST_F(ParquetPageIndexRoundTripTest, MultiplePages) {
 }
 
 TEST_F(ParquetPageIndexRoundTripTest, DoubleWithNaNs) {
+  auto arrow_writer_properties =
+      ArrowWriterProperties::Builder()
+          .floating_point_column_order(ColumnOrder::TYPE_DEFINED_ORDER)
+          ->build();
   auto writer_properties = WriterProperties::Builder()
                                .enable_write_page_index()
                                ->max_row_group_length(3) /* 3 rows per row group */
@@ -6230,7 +6288,7 @@ TEST_F(ParquetPageIndexRoundTripTest, DoubleWithNaNs) {
 
   auto schema = ::arrow::schema({::arrow::field("c0", ::arrow::float64())});
   auto table = Table::Make(schema, {chunked_array});
-  WriteFile(writer_properties, table);
+  WriteFile(writer_properties, table, arrow_writer_properties);
 
   ReadPageIndexes(/*expect_num_row_groups=*/4, /*expect_num_pages=*/1);
 

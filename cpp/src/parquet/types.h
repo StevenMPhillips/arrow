@@ -596,16 +596,27 @@ struct PageType {
 
 bool PageCanUseChecksum(PageType::type pageType);
 
-class ColumnOrder {
+class PARQUET_EXPORT ColumnOrder {
  public:
-  enum type { UNDEFINED, TYPE_DEFINED_ORDER };
+  enum type {
+    // File metadata has no column order, only legacy min/max in stats are defined.
+    UNDEFINED,
+    // File metadata uses TypeDefinedOrder from the Parquet format.
+    TYPE_DEFINED_ORDER,
+    // File metadata uses IEEE754TotalOrder from the Parquet format.
+    IEEE_754_TOTAL_ORDER,
+    // Column order value unsupported by this reader.
+    UNKNOWN
+  };
   explicit ColumnOrder(ColumnOrder::type column_order) : column_order_(column_order) {}
   // Default to Type Defined Order
   ColumnOrder() : column_order_(type::TYPE_DEFINED_ORDER) {}
-  ColumnOrder::type get_order() { return column_order_; }
+  ColumnOrder::type get_order() const { return column_order_; }
 
   static ColumnOrder undefined_;
   static ColumnOrder type_defined_;
+  static ColumnOrder ieee_754_total_order_;
+  static ColumnOrder unknown_;
 
  private:
   ColumnOrder::type column_order_;
@@ -859,6 +870,8 @@ PARQUET_EXPORT std::string ConvertedTypeToString(ConvertedType::type t);
 PARQUET_EXPORT std::string TypeToString(Type::type t);
 
 PARQUET_EXPORT std::string TypeToString(Type::type t, int type_length);
+
+PARQUET_EXPORT std::string ColumnOrderToString(ColumnOrder::type t);
 
 PARQUET_EXPORT std::string FormatStatValue(
     Type::type parquet_type, ::std::string_view val,

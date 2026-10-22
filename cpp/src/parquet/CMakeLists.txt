@@ -407,6 +407,7 @@ add_parquet_test(arrow-reader-writer-test
                  SOURCES
                  arrow/arrow_reader_writer_test.cc
                  arrow/arrow_statistics_test.cc
+                 arrow/floating_point_index_test.cc
                  arrow/variant_test.cc)
 
 add_parquet_test(arrow-internals-test SOURCES arrow/path_internal_test.cc

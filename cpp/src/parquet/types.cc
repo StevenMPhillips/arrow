@@ -298,6 +298,20 @@ std::string TypeToString(Type::type t, int type_length) {
   return s;
 }
 
+std::string ColumnOrderToString(ColumnOrder::type t) {
+  switch (t) {
+    case ColumnOrder::UNDEFINED:
+      return "UNDEFINED";
+    case ColumnOrder::TYPE_DEFINED_ORDER:
+      return "TYPE_DEFINED_ORDER";
+    case ColumnOrder::IEEE_754_TOTAL_ORDER:
+      return "IEEE_754_TOTAL_ORDER";
+    case ColumnOrder::UNKNOWN:
+    default:
+      return "UNKNOWN";
+  }
+}
+
 std::string ConvertedTypeToString(ConvertedType::type t) {
   switch (t) {
     case ConvertedType::NONE:
@@ -444,6 +458,9 @@ SortOrder::type GetSortOrder(const std::shared_ptr<const LogicalType>& logical_t
 
 ColumnOrder ColumnOrder::undefined_ = ColumnOrder(ColumnOrder::UNDEFINED);
 ColumnOrder ColumnOrder::type_defined_ = ColumnOrder(ColumnOrder::TYPE_DEFINED_ORDER);
+ColumnOrder ColumnOrder::ieee_754_total_order_ =
+    ColumnOrder(ColumnOrder::IEEE_754_TOTAL_ORDER);
+ColumnOrder ColumnOrder::unknown_ = ColumnOrder(ColumnOrder::UNKNOWN);
 
 // Static methods for LogicalType class
 
@@ -868,8 +885,10 @@ class LogicalType::Impl::Compatible : public virtual LogicalType::Impl {
     }                                                \
   }
 
-#define reset_decimal_metadata(m___) \
-  { set_decimal_metadata(m___, false, -1, -1); }
+#define reset_decimal_metadata(m___)           \
+  {                                            \
+    set_decimal_metadata(m___, false, -1, -1); \
+  }
 
 // For logical types that always translate to the same converted type
 class LogicalType::Impl::SimpleCompatible : public virtual LogicalType::Impl::Compatible {
